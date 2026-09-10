@@ -54,3 +54,13 @@ test('dashboard is available to an authenticated publisher', () => {
 
   expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
 })
+
+test('visitor navigation omits the Publisher dashboard link', () => {
+  render(
+    <AuthContext.Provider value={{ isRestoring: false, token: 'token', user: { role: 'visitor' } }}>
+      <MemoryRouter><App /></MemoryRouter>
+    </AuthContext.Provider>,
+  )
+
+  expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument()
+})
