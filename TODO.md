@@ -8,6 +8,13 @@ Milestone 5—the editorial public homepage and published article, announcement,
 
 The reusable frontend foundation is the prerequisite for Milestone 6. It establishes the shared layouts, navigation, controls, theme tokens, and homepage composition conventions that the dashboard and publisher-picture work will use.
 
+## Frontend stabilization gate
+
+- [x] Restore the normal Vite development command and restart the frontend.
+- [x] Run Compose frontend tests (42), backend tests (119), and frontend build; verify fresh Firefox startup and public empty/not-found states.
+- [ ] Capture the affected browser’s failed `PageView.jsx` request and console error, reproduce the failure, and add a regression test before any application behavior fix.
+- [ ] Confirm the affected browser renders the homepage, both login screens, and published detail routes without failed application modules or uncaught startup errors before starting Milestone 6. See [acceptance evidence](docs/reports/frontend-stabilization.md).
+
 ## Backend
 
 - [x] Implement the User, Article, Announcement, Page, Category, Tag, and Media domain models.

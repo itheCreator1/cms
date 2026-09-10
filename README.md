@@ -56,6 +56,10 @@ docker compose build --no-cache backend frontend
 docker compose up -d
 ```
 
+The frontend development command is `vite --host 0.0.0.0` (`npm run dev`). After changing that script, restart it with `docker compose restart frontend`. Production bundles use the separate build command below.
+
+For a blank screen, capture the failed module request in the affected browser’s Network panel: URL, status, response, redirects, and blocking reason, together with the console startup error. A successful server response or a clean browser check alone does not establish that the affected profile works. See [the stabilization acceptance record](docs/reports/frontend-stabilization.md).
+
 ## Tests and frontend build
 
 Run all tests in their service containers:
