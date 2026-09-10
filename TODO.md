@@ -4,6 +4,8 @@ Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is 
 
 Milestone 4—taxonomy CRUD, secure image uploads, external media links, and guarded user administration—is complete. Markdown rendering, rich provider embeds, and non-image uploads remain later work.
 
+Milestone 5—the editorial public homepage and published article, announcement, and page routes—is complete. The authenticated dashboard remains the next delivery area.
+
 ## Backend
 
 - [x] Implement the User, Article, Announcement, Page, Category, Tag, and Media domain models.
@@ -27,9 +29,10 @@ Milestone 4—taxonomy CRUD, secure image uploads, external media links, and gua
 - [x] Attach authentication tokens automatically in the shared API client.
 - [x] Replace the unconditional dashboard redirect with role-aware protected routes.
 - [x] Implement regular and visually distinct Superadmin login flows against their separate endpoints.
-- [ ] Fetch and render published announcements and articles on the homepage.
-- [ ] Fetch and render public article, announcement, and page routes.
-- [ ] Implement article and announcement API services and the remaining content, taxonomy, media, and user services.
+- [x] Fetch and render published announcements and articles on the homepage.
+- [x] Fetch and render public article, announcement, and page routes.
+- [x] Implement public article, announcement, page, and category API services.
+- [ ] Implement dashboard content, tag, media, and user API services.
 - [ ] Build the role-aware dashboard and editable content lists.
 - [ ] Add article and announcement editors with draft, review, publish, and unpublish workflows.
 - [ ] Add category and tag management, the media library/uploader, and user administration screens.
@@ -45,7 +48,8 @@ Milestone 4—taxonomy CRUD, secure image uploads, external media links, and gua
 - [x] Test content-core CRUD validation and public-content filtering.
 - [x] Test taxonomy/user CRUD validation and uploads.
 - [x] Test frontend authentication persistence, protected routes, role-aware navigation, and both login screens.
-- [ ] Test public content and dashboard workflows.
+- [x] Test public content workflows, failures, retries, ordering, and safe body rendering.
+- [ ] Test dashboard workflows.
 - [ ] Add end-to-end coverage for critical public and authenticated user journeys.
 - [x] Run the full Compose acceptance sequence after each completed milestone.
 

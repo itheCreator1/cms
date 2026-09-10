@@ -2,7 +2,7 @@
 
 This repository contains a Dockerized role-based CMS built with Flask, React, and PostgreSQL. Docker Compose is the canonical runtime: it starts PostgreSQL 18, the Flask API, and the Vite/React frontend together with health checks and source reload.
 
-Milestones 1–4 are complete: the repository includes the runnable application skeleton, migrated domain schema, JWT authentication, numeric role enforcement, frontend session restoration, content CRUD, taxonomy management, guarded user administration, and a secure media library. Public content screens and the complete dashboard remain later work.
+Milestones 1–5 are complete: the repository includes the runnable application skeleton, migrated domain schema, JWT authentication, numeric role enforcement, frontend session restoration, content CRUD, taxonomy management, guarded user administration, a secure media library, and the public reading experience. The complete dashboard remains later work.
 
 ## Requirements
 
@@ -23,7 +23,7 @@ Then build and start all three services:
 docker compose up --build
 ```
 
-Open <http://localhost:5173>. The home page calls <http://localhost:5000/api/health> and reports the connection state. PostgreSQL is exposed on `localhost:5432` with the configured `POSTGRES_*` values.
+Open <http://localhost:5173>. The home page loads published announcements, articles, categories, and featured images from the Flask API. PostgreSQL is exposed on `localhost:5432` with the configured `POSTGRES_*` values.
 
 Run in the background, inspect status, and follow logs:
 
@@ -104,6 +104,19 @@ Publishers can create and manage only their own draft articles and announcements
 
 Article requests require an existing `category_id`. Optional `tag_ids` values must reference existing tags. A `featured_image_id` must reference an uploaded image; article responses retain that ID and include a nested `featured_image` object when present.
 
+## Public frontend
+
+The public React routes are available without login:
+
+- `/` shows current announcements and published articles in an editorial layout.
+- `/articles/<slug>` shows a published article and its uploaded featured image.
+- `/announcements` shows all current published announcements.
+- `/pages/<slug>` shows a published static page.
+
+Public content requests deliberately omit any stored bearer token, so an expired browser session cannot hide otherwise public material. Article and page bodies render as plain text with paragraph breaks preserved; stored HTML is never injected into the document. Markdown and rich provider embeds remain later extensions.
+
+The homepage loads articles, announcements, and category metadata independently. If category metadata is unavailable, articles remain readable without labels; if one content section fails, the other successful sections remain visible and the failed section provides a retry action.
+
 ## Administration API
 
 Category and tag collections are public so published content can resolve its taxonomy. Mutation requires Admin or Superadmin access:
@@ -145,7 +158,7 @@ Review the generated revision before applying it. `flask db init` is a one-time 
 ## Project layout
 
 - `backend/`: Flask application factory, feature Blueprints, domain models, authentication/authorization helpers, media storage adapter, seed command, and pytest suite
-- `frontend/`: Vite/React application, router, persistent auth context, shared API client, login screens, and Vitest suite
+- `frontend/`: Vite/React application, public reading experience, router, persistent auth context, shared API client, login screens, and Vitest suite
 - `migrations/`: tracked Flask-Migrate/Alembic environment
 - `compose.yaml`: canonical development runtime with persistent PostgreSQL, uploaded-media, and frontend-dependency volumes
 

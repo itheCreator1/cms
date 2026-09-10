@@ -1,6 +1,6 @@
 # Milestone 5 Public Frontend Plan
 
-## Status: active
+## Status: complete
 
 Milestone 5 replaces the public placeholders with a complete reading experience while preserving the existing Flask REST contracts and authenticated dashboard boundary.
 
