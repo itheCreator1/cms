@@ -5,6 +5,7 @@ from backend.extensions import db
 
 class AnnouncementStatus(str, Enum):
     DRAFT = "draft"
+    PENDING_REVIEW = "pending_review"
     PUBLISHED = "published"
 
 
