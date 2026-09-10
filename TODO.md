@@ -16,14 +16,14 @@ Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is 
 - [x] Add request validation, consistent JSON errors, and appropriate HTTP status codes for the authentication foundation.
 - [ ] Implement media uploads, local file storage, and returned media URLs.
 - [x] Add a seed command that creates a Superadmin and sample categories using credentials from environment variables.
-- [ ] Add the seed variables to `.env.example` without committing credentials.
+- [x] Add the seed and JWT variables to `.env.example` without committing credentials.
 
 ## Frontend
 
-- [ ] Replace the inert auth context with JWT and current-user state, including local-storage restoration and logout.
-- [ ] Attach authentication tokens automatically in the shared API client.
-- [ ] Replace the unconditional dashboard redirect with role-aware protected routes.
-- [ ] Implement regular and visually distinct Superadmin login flows against their separate endpoints.
+- [x] Replace the inert auth context with JWT and current-user state, including local-storage restoration and logout.
+- [x] Attach authentication tokens automatically in the shared API client.
+- [x] Replace the unconditional dashboard redirect with role-aware protected routes.
+- [x] Implement regular and visually distinct Superadmin login flows against their separate endpoints.
 - [ ] Fetch and render published announcements and articles on the homepage.
 - [ ] Fetch and render public article, announcement, and page routes.
 - [ ] Implement article and announcement API services and the remaining content, taxonomy, media, and user services.
@@ -37,12 +37,14 @@ Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is 
 - [x] Add model and migration tests against PostgreSQL.
 - [x] Test signup, login, JWT validation, Superadmin isolation, and role hierarchy behavior.
 - [ ] Test ownership and authorization boundaries for every protected API operation.
-- [ ] Test CRUD validation, public-content filtering, uploads, and seed behavior.
-- [ ] Test frontend authentication persistence, protected routes, role-aware navigation, public content, and dashboard workflows.
+- [x] Test seed validation, idempotency, and collision handling.
+- [ ] Test CRUD validation, public-content filtering, and uploads.
+- [x] Test frontend authentication persistence, protected routes, role-aware navigation, and both login screens.
+- [ ] Test public content and dashboard workflows.
 - [ ] Add end-to-end coverage for critical public and authenticated user journeys.
-- [ ] Run the full Compose acceptance sequence after each completed milestone.
+- [x] Run the full Compose acceptance sequence after each completed milestone.
 
 ## Delivery
 
-- [ ] Expand the README as working CMS commands and operational requirements are introduced.
+- [x] Expand the README as working CMS commands and operational requirements are introduced.
 - [ ] Configure a Git remote and push the existing local commits when ready.

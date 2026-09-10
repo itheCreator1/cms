@@ -1,17 +1,17 @@
 # Milestone 2 Frontend Authentication
 
-## Status: pending
+## Status: implemented; final acceptance pending
 
-Frontend authentication was intentionally not started when work stopped after completing the backend foundation.
+Frontend authentication is implemented against the completed backend foundation.
 
-Remaining scope:
+Delivered:
 
-- Persist and restore the access token under `cms_access_token`.
-- Load the current user and clear invalid or expired sessions.
-- Attach bearer tokens automatically in the shared API client.
-- Implement login/logout state and auth-service calls.
-- Make protected routes role-aware with safe anonymous and insufficient-role handling.
-- Implement working regular and visually distinct Superadmin login pages.
-- Add tests for persistence, authorization headers, logout, restoration, routing, and both login screens.
+- Access tokens persist under `cms_access_token` and restore through `/api/me`.
+- Invalid 401 sessions are cleared; logout clears memory and storage.
+- The shared API client attaches bearer tokens automatically.
+- Regular and isolated Superadmin auth-service calls are separate.
+- Protected routes enforce the numeric Visitor/Publisher/Admin/Superadmin hierarchy for frontend navigation.
+- Regular and visually distinct Superadmin login pages are working.
+- Frontend tests cover persistence, authorization headers, logout, restoration, routing, and both login screens.
 
-No completion or verification claim is made for this report.
+Final milestone acceptance remains pending until the complete Compose verification sequence is recorded.

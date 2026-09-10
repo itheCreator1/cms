@@ -1,8 +1,8 @@
-# CMS Milestone 1
+# CMS
 
-This repository contains the Dockerized development skeleton for a role-based CMS. Docker Compose is the canonical runtime: it starts PostgreSQL 18, the Flask API, and the Vite/React frontend together with health checks and source reload.
+This repository contains a Dockerized role-based CMS built with Flask, React, and PostgreSQL. Docker Compose is the canonical runtime: it starts PostgreSQL 18, the Flask API, and the Vite/React frontend together with health checks and source reload.
 
-Milestone 1 deliberately contains no domain schema, authentication, CRUD, uploads, or seed data. Login pages explain that authentication is unavailable, and all dashboard URLs redirect to `/login`.
+The current milestone includes the domain schema, Alembic migration, backend authentication, JWT sessions, numeric role enforcement, Superadmin isolation, rate limits, and frontend login/session restoration. Content CRUD, ownership enforcement, uploads, and the complete dashboard remain future work.
 
 ## Requirements
 
@@ -71,6 +71,24 @@ Create a production frontend bundle:
 docker compose exec frontend npm run build
 ```
 
+## Authentication and seed data
+
+The backend exposes these authentication endpoints:
+
+- `POST /api/signup` creates a Visitor with a hashed password.
+- `POST /api/login` authenticates Visitor, Publisher, and Admin accounts.
+- `POST /api/superadmin-login` is an isolated Superadmin-only login endpoint.
+- `GET /api/me` returns the authenticated public identity.
+
+Copy `.env.example` to `.env` and set local values for `JWT_SECRET_KEY`, `SEED_SUPERADMIN_EMAIL`, and `SEED_SUPERADMIN_PASSWORD`. Then apply migrations and run the idempotent seed command:
+
+```sh
+docker compose exec backend flask db upgrade
+docker compose exec backend flask seed
+```
+
+The frontend stores the short-lived access token under `cms_access_token`, restores it through `/api/me`, attaches it as a bearer token, and clears it on logout or an invalid session. The `/system-access` route is intentionally unlinked from navigation and calls only the Superadmin endpoint.
+
 ## Database migrations
 
 The Alembic environment in `migrations/` is tracked, and its `versions/` directory is intentionally empty in Milestone 1. There is no synthetic schema revision.
@@ -93,8 +111,8 @@ Review the generated revision before applying it. `flask db init` is a one-time 
 
 ## Project layout
 
-- `backend/`: Flask application factory, extensions, placeholder Blueprints/models, and pytest suite
-- `frontend/`: Vite/React shell, router, inert auth context, API client, placeholders, and Vitest suite
+- `backend/`: Flask application factory, extensions, domain models, authentication Blueprints, seed command, and pytest suite
+- `frontend/`: Vite/React application, router, persistent auth context, shared API client, login screens, and Vitest suite
 - `migrations/`: tracked Flask-Migrate/Alembic environment
 - `compose.yaml`: canonical development runtime and persistent volumes
 
