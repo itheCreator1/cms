@@ -7,6 +7,7 @@ from backend.models import User, UserRole
 from backend.utils.auth_helpers import login_required
 from backend.utils.security_logging import log_superadmin_attempt
 from backend.utils.validation import normalize_email
+from backend.utils.users import serialize_public_user
 
 blueprint = Blueprint("auth", __name__, url_prefix="/api")
 
@@ -39,21 +40,12 @@ def _login_credentials():
     return email, password
 
 
-def _public_user(user):
-    return {
-        "id": user.id,
-        "email": user.email,
-        "role": user.role.value,
-        "created_at": user.created_at.isoformat(),
-    }
-
-
-def _successful_login(user):
+def _successful_login(user, auth_channel):
     token = create_access_token(
         identity=str(user.id),
-        additional_claims={"role": user.role.value},
+        additional_claims={"role": user.role.value, "auth_channel": auth_channel},
     )
-    return jsonify(access_token=token, user=_public_user(user))
+    return jsonify(access_token=token, user=serialize_public_user(user))
 
 
 def _invalid_credentials():
@@ -79,7 +71,7 @@ def signup():
         db.session.rollback()
         return jsonify(error="Email is already registered"), 409
 
-    return jsonify(user=_public_user(user)), 201
+    return jsonify(user=serialize_public_user(user)), 201
 
 
 @blueprint.post("/login")
@@ -96,7 +88,7 @@ def login():
     permitted_roles = {UserRole.VISITOR, UserRole.PUBLISHER, UserRole.ADMIN}
     if not password_matches or user.role not in permitted_roles:
         return _invalid_credentials()
-    return _successful_login(user)
+    return _successful_login(user, "regular")
 
 
 def _superadmin_limit_breached(_request_limit):
@@ -120,7 +112,7 @@ def superadmin_login():
         log_superadmin_attempt(request.remote_addr, "failure")
         return _invalid_credentials()
 
-    response = _successful_login(user)
+    response = _successful_login(user, "superadmin")
     log_superadmin_attempt(request.remote_addr, "success")
     return response
 
@@ -128,7 +120,7 @@ def superadmin_login():
 @blueprint.get("/me")
 @login_required
 def me():
-    return jsonify(user=_public_user(get_current_user()))
+    return jsonify(user=serialize_public_user(get_current_user()))
 
 
 def configure_auth_rate_limits(app, limiter):

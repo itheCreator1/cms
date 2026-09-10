@@ -55,7 +55,14 @@ def load_authenticated_user(_header, jwt_data):
         return None
     if user_id <= 0:
         return None
-    return db.session.get(User, user_id)
+    user = db.session.get(User, user_id)
+    if (
+        user is not None
+        and user.role is UserRole.SUPERADMIN
+        and jwt_data.get("auth_channel") != "superadmin"
+    ):
+        return None
+    return user
 
 
 def login_required(view):
