@@ -2,7 +2,7 @@
 
 This repository contains a Dockerized role-based CMS built with Flask, React, and PostgreSQL. Docker Compose is the canonical runtime: it starts PostgreSQL 18, the Flask API, and the Vite/React frontend together with health checks and source reload.
 
-Milestones 1–5 are complete: the repository includes the runnable application skeleton, migrated domain schema, JWT authentication, numeric role enforcement, frontend session restoration, content CRUD, taxonomy management, guarded user administration, a secure media library, and the public reading experience. The complete dashboard remains later work.
+Milestones 1–5 are complete: the repository includes the runnable application skeleton, migrated domain schema, JWT authentication, numeric role enforcement, frontend session restoration, content CRUD, taxonomy management, guarded user administration, a secure media library, and the public reading experience. The reusable frontend foundation supplies the shared route shells, navigation, controls, homepage composition, and co-located stylesheet modules. Milestone 6 then delivers the complete dashboard and publisher pictures. Site-wide settings remain later work.
 
 ## Requirements
 
@@ -161,6 +161,18 @@ Review the generated revision before applying it. `flask db init` is a one-time 
 - `frontend/`: Vite/React application, public reading experience, router, persistent auth context, shared API client, login screens, and Vitest suite
 - `migrations/`: tracked Flask-Migrate/Alembic environment
 - `compose.yaml`: canonical development runtime with persistent PostgreSQL, uploaded-media, and frontend-dependency volumes
+
+## Frontend composition and themes
+
+The reusable frontend foundation separates route-area shells from shared site chrome and page content:
+
+- `frontend/src/layouts/PublicLayout.jsx`, `AuthLayout.jsx`, and `DashboardLayout.jsx` own the outer structure for public, authentication, and dashboard routes.
+- `frontend/src/components/layout/Header.jsx`, `Navigation.jsx`, and `Footer.jsx` own reusable site chrome. Edit these files for global header, navigation, and footer changes.
+- `frontend/src/components/ui/Button.jsx` and `FormField.jsx` are shared controls. Page-specific controls should compose or extend these patterns without duplicating their behavior and states.
+- `frontend/src/components/home/HomeIntro.jsx`, `AnnouncementSection.jsx`, and `ArticleSection.jsx` present the homepage. `frontend/src/hooks/useHomeContent.js` loads the homepage data, and `frontend/src/pages/public/Home.jsx` is the edit point for the section order.
+- `frontend/src/styles.css` is the single source of global reset and theme tokens. Layout, page, and component rules belong in co-located CSS Modules and consume those tokens.
+
+Milestone 6 depends on this foundation. It keeps the planned role-aware dashboard, editorial workflow, and Publisher-owned picture upload and rendering requirements. Superadmin site-wide settings are a later milestone.
 
 ## Optional host-native troubleshooting
 

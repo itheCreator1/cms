@@ -182,9 +182,11 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── layout/       (Header, Nav, Footer)
+│   │   ├── layout/       (Header, Navigation, Footer)
 │   │   ├── content/       (ArticleCard, AnnouncementCard, MediaUploader)
-│   │   └── ui/             (Button, LoadingSpinner, generic reusable pieces)
+│   │   ├── home/          (HomeIntro, AnnouncementSection, ArticleSection)
+│   │   └── ui/            (Button, FormField, LoadingSpinner, generic reusable pieces)
+│   ├── layouts/           (PublicLayout, AuthLayout, DashboardLayout)
 │   ├── pages/
 │   │   ├── public/        (Home, ArticlePage, AnnouncementsPage, PageView)
 │   │   ├── auth/           (Login, SuperadminLogin)
@@ -192,6 +194,8 @@ frontend/
 │   │                        ManageUsers, ManageCategories, MediaLibrary)
 │   ├── context/
 │   │   └── AuthContext.jsx
+│   ├── hooks/
+│   │   └── useHomeContent.js
 │   ├── services/
 │   │   ├── api.js          (base fetch wrapper, includes auth token automatically)
 │   │   ├── articles.js
@@ -199,6 +203,7 @@ frontend/
 │   │   └── auth.js
 │   ├── routes/
 │   │   └── ProtectedRoute.jsx   (role-gated route wrapper)
+│   ├── styles.css        (global reset and theme-token source)
 │   ├── App.jsx
 │   └── main.jsx
 └── package.json
@@ -208,6 +213,15 @@ frontend/
 - Fetches and displays a list of published Announcements (e.g., a banner or top section)
 - Fetches and displays a list of published Articles in a newspaper-style layout (headline + summary cards)
 - No login required to view
+
+**Reusable frontend foundation:**
+- Establish the reusable frontend foundation before adding dashboard screens. It provides the public, authentication, and dashboard shells and remains the shared presentation boundary for subsequent frontend milestones.
+- Route-area shells live in `src/layouts/PublicLayout.jsx`, `AuthLayout.jsx`, and `DashboardLayout.jsx`. They own the appropriate outer structure and navigation placement; pages compose their content inside the relevant shell rather than duplicating chrome.
+- Shared site chrome lives in `src/components/layout/Header.jsx`, `Navigation.jsx`, and `Footer.jsx`. Update these components to change global header, navigation, or footer behavior and content.
+- Shared controls live in `src/components/ui/`, beginning with `Button.jsx` and `FormField.jsx`. Reuse these controls for consistent interactive and accessible states; keep page-specific presentation out of the generic controls.
+- Homepage presentations live in `src/components/home/`: `HomeIntro.jsx`, `AnnouncementSection.jsx`, and `ArticleSection.jsx`. `src/hooks/useHomeContent.js` owns the homepage's coordinated data loading. `Home.jsx` composes those sections and is the single edit point for their display order.
+- `src/styles.css` is the source of truth for global reset and theme tokens. Layout, page, and component rules move into co-located CSS Modules and consume those tokens; they must not introduce competing global theme values.
+- The foundation must preserve React Router, the shared API-client architecture, role-aware protected routes, and the existing public-content behavior while making each layout and component focused on one responsibility.
 
 **Auth:**
 - `AuthContext` stores JWT (in memory + localStorage) and current user's role
@@ -219,6 +233,9 @@ frontend/
 - Admin: additionally sees ALL users' content, a "Publish/Unpublish" toggle, category/tag management, media library
 - Superadmin: additionally sees user management (create/edit/delete Admins and Publishers, change roles)
 - Use conditional rendering based on role to show/hide dashboard sections and buttons — don't rely on hiding alone for security, the backend must also enforce it
+
+**Site-wide settings (later milestone):**
+- Superadmins must be able to manage site-wide settings through backend-authorized APIs and a corresponding dashboard experience. The settings model, persistence, validation, audit/authorization behavior, and public application of settings remain outstanding after the reusable frontend foundation and Milestone 6.
 
 **Routing:**
 - Use React Router

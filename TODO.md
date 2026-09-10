@@ -6,6 +6,8 @@ Milestone 4—taxonomy CRUD, secure image uploads, external media links, and gua
 
 Milestone 5—the editorial public homepage and published article, announcement, and page routes—is complete. The authenticated dashboard remains the next delivery area.
 
+The reusable frontend foundation is the prerequisite for Milestone 6. It establishes the shared layouts, navigation, controls, theme tokens, and homepage composition conventions that the dashboard and publisher-picture work will use.
+
 ## Backend
 
 - [x] Implement the User, Article, Announcement, Page, Category, Tag, and Media domain models.
@@ -25,6 +27,8 @@ Milestone 5—the editorial public homepage and published article, announcement,
 
 ## Frontend
 
+- [x] Build the reusable frontend foundation: `PublicLayout`, `AuthLayout`, and `DashboardLayout`; shared `Header`, `Navigation`, and `Footer`; reusable `Button` and `FormField` controls; homepage presentation components and `useHomeContent`.
+- [x] Complete the stylesheet migration: retain theme tokens and the global reset in `frontend/src/styles.css`, then move the remaining legacy layout, page, and content-card rules into co-located CSS Modules.
 - [x] Replace the inert auth context with JWT and current-user state, including local-storage restoration and logout.
 - [x] Attach authentication tokens automatically in the shared API client.
 - [x] Replace the unconditional dashboard redirect with role-aware protected routes.
@@ -37,6 +41,7 @@ Milestone 5—the editorial public homepage and published article, announcement,
 - [ ] Add article and announcement editors with draft, review, publish, and unpublish workflows.
 - [ ] Add category and tag management, the media library/uploader, and user administration screens.
 - [ ] Show dashboard sections and actions according to Publisher, Admin, and Superadmin permissions.
+- [ ] Add Superadmin-authorized site-wide settings persistence, API validation, and dashboard management screens.
 
 ## Testing
 
