@@ -1,4 +1,7 @@
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 
@@ -13,3 +16,6 @@ naming_convention = {
 
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
+jwt = JWTManager()
+# request.remote_addr is the safe default until a known reverse proxy is configured.
+limiter = Limiter(key_func=get_remote_address)

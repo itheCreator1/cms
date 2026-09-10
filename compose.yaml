@@ -24,8 +24,12 @@ services:
       FLASK_APP: backend.app:create_app
       FLASK_DEBUG: "1"
       SECRET_KEY: ${SECRET_KEY:-development-only-change-me}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-development-only-change-me}
+      JWT_ACCESS_TOKEN_EXPIRES_SECONDS: ${JWT_ACCESS_TOKEN_EXPIRES_SECONDS:-900}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://cms:cms@db:5432/cms}
+      SEED_SUPERADMIN_EMAIL: ${SEED_SUPERADMIN_EMAIL:-}
+      SEED_SUPERADMIN_PASSWORD: ${SEED_SUPERADMIN_PASSWORD:-}
     ports:
       - "5000:5000"
     volumes:
