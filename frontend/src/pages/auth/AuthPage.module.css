@@ -1,0 +1,4 @@
+.panel { width: min(100%, 32rem); }
+.form { display: grid; gap: var(--space-4); }
+.error { color: #a2482d; margin: 0; }
+.systemAccess { background: #eee5d7; border-left: .4rem solid var(--rust); padding: var(--space-6); }
