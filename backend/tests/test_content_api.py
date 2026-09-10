@@ -1,0 +1,243 @@
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from flask_jwt_extended import create_access_token
+from flask_migrate import upgrade
+from sqlalchemy import text
+
+
+class ContentTestConfig:
+    TESTING = True
+    SECRET_KEY = "content-test-secret"
+    JWT_SECRET_KEY = "content-jwt-test-secret-at-least-32-bytes"
+    JWT_TOKEN_LOCATION = ["headers"]
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    FRONTEND_ORIGIN = "http://frontend.test"
+    RATELIMIT_ENABLED = False
+
+
+@pytest.fixture(scope="module")
+def app(postgres_database_url):
+    from backend.app import create_app
+
+    ContentTestConfig.SQLALCHEMY_DATABASE_URI = postgres_database_url
+    application = create_app(ContentTestConfig)
+    with application.app_context():
+        upgrade(directory="migrations")
+    return application
+
+
+@pytest.fixture(autouse=True)
+def clean_database(app):
+    from backend.extensions import db
+
+    with app.app_context():
+        db.session.execute(
+            text(
+                "TRUNCATE TABLE article_tags, articles, announcements, pages, "
+                "media, tags, categories, users RESTART IDENTITY CASCADE"
+            )
+        )
+        db.session.commit()
+    yield
+    with app.app_context():
+        db.session.rollback()
+        db.session.remove()
+
+
+@pytest.fixture()
+def client(app):
+    return app.test_client()
+
+
+def create_user(app, email, role):
+    from backend.extensions import db
+    from backend.models import User, UserRole
+
+    with app.app_context():
+        user = User(email=email, role=UserRole(role))
+        user.set_password("correct horse battery staple")
+        db.session.add(user)
+        db.session.commit()
+        return user.id
+
+
+def bearer(app, user_id, role):
+    with app.app_context():
+        token = create_access_token(
+            identity=str(user_id), additional_claims={"role": role}
+        )
+    return {"Authorization": f"Bearer {token}"}
+
+
+def seed_relations(app, uploader_id):
+    from backend.extensions import db
+    from backend.models import Category, Media, Tag
+
+    with app.app_context():
+        category = Category(name="News", slug="news")
+        tag = Tag(name="Featured", slug="featured")
+        media = Media(
+            filename="lead.jpg",
+            url="/uploads/lead.jpg",
+            uploaded_by=uploader_id,
+            file_type="image/jpeg",
+        )
+        db.session.add_all([category, tag, media])
+        db.session.commit()
+        return category.id, tag.id, media.id
+
+
+def article_payload(category_id, **overrides):
+    return {
+        "title": "A useful headline",
+        "slug": "useful-headline",
+        "body": "Complete article body",
+        "category_id": category_id,
+        **overrides,
+    }
+
+
+def test_anonymous_reads_return_only_published_content_and_invalid_tokens_fail(
+    app, client
+):
+    from backend.extensions import db
+    from backend.models import (
+        Announcement,
+        AnnouncementStatus,
+        Article,
+        ArticleStatus,
+        Category,
+        Page,
+        PageStatus,
+    )
+
+    author_id = create_user(app, "author@example.test", "publisher")
+    with app.app_context():
+        category = Category(name="News", slug="news")
+        db.session.add(category)
+        db.session.flush()
+        db.session.add_all(
+            [
+                Article(title="Public", slug="public", body="Published", status=ArticleStatus.PUBLISHED, author_id=author_id, category_id=category.id, published_at=datetime.now(timezone.utc)),
+                Article(title="Private", slug="private", body="Draft", author_id=author_id, category_id=category.id),
+                Announcement(title="Current", body="Published", status=AnnouncementStatus.PUBLISHED, author_id=author_id, published_at=datetime.now(timezone.utc)),
+                Announcement(title="Expired", body="Old", status=AnnouncementStatus.PUBLISHED, author_id=author_id, published_at=datetime.now(timezone.utc), expires_at=datetime.now(timezone.utc) - timedelta(minutes=1)),
+                Page(title="About", slug="about", body="Public page", status=PageStatus.PUBLISHED, author_id=author_id),
+                Page(title="Hidden", slug="hidden", body="Draft page", author_id=author_id),
+            ]
+        )
+        db.session.commit()
+
+    assert [item["slug"] for item in client.get("/api/articles").json["items"]] == ["public"]
+    assert [item["title"] for item in client.get("/api/announcements").json["items"]] == ["Current"]
+    assert [item["slug"] for item in client.get("/api/pages").json["items"]] == ["about"]
+    assert client.get("/api/articles/slug/private").status_code == 404
+    assert client.get("/api/pages/slug/hidden").status_code == 404
+    invalid = client.get("/api/articles", headers={"Authorization": "Bearer malformed"})
+    assert invalid.status_code == 401
+    assert invalid.json == {"error": "Authentication required"}
+
+
+def test_publisher_creates_and_submits_own_article_with_server_owned_fields(app, client):
+    owner_id = create_user(app, "owner@example.test", "publisher")
+    other_id = create_user(app, "other@example.test", "publisher")
+    category_id, tag_id, media_id = seed_relations(app, owner_id)
+    headers = bearer(app, owner_id, "publisher")
+    created = client.post(
+        "/api/articles",
+        headers=headers,
+        json=article_payload(category_id, author_id=other_id, tag_ids=[tag_id], featured_image_id=media_id),
+    )
+    assert created.status_code == 201
+    item = created.json["item"]
+    assert (item["author_id"], item["status"], item["tag_ids"]) == (owner_id, "draft", [tag_id])
+
+    submitted = client.put(
+        f"/api/articles/{item['id']}",
+        headers=headers,
+        json={"title": "Revised", "status": "pending_review"},
+    )
+    assert submitted.status_code == 200
+    assert submitted.json["item"]["status"] == "pending_review"
+    assert client.put(f"/api/articles/{item['id']}", headers=headers, json={"title": "Denied"}).status_code == 403
+    assert client.delete(f"/api/articles/{item['id']}", headers=headers).status_code == 403
+
+
+def test_publisher_cannot_mutate_foreign_article_or_publish_content(app, client):
+    owner_id = create_user(app, "owner@example.test", "publisher")
+    other_id = create_user(app, "other@example.test", "publisher")
+    category_id, _, _ = seed_relations(app, owner_id)
+    article = client.post(
+        "/api/articles",
+        headers=bearer(app, owner_id, "publisher"),
+        json=article_payload(category_id),
+    ).json["item"]
+    other_headers = bearer(app, other_id, "publisher")
+    assert client.put(f"/api/articles/{article['id']}", headers=other_headers, json={"title": "Denied"}).status_code == 403
+    assert client.put(f"/api/articles/{article['id']}", headers=bearer(app, owner_id, "publisher"), json={"status": "published"}).status_code == 403
+
+
+def test_admin_manages_any_article_and_controls_publication_timestamps(app, client):
+    publisher_id = create_user(app, "publisher@example.test", "publisher")
+    admin_id = create_user(app, "admin@example.test", "admin")
+    category_id, _, _ = seed_relations(app, admin_id)
+    article = client.post("/api/articles", headers=bearer(app, publisher_id, "publisher"), json=article_payload(category_id)).json["item"]
+    headers = bearer(app, admin_id, "admin")
+    published = client.put(f"/api/articles/{article['id']}", headers=headers, json={"status": "published"})
+    assert published.status_code == 200
+    assert published.json["item"]["published_at"] is not None
+    unpublished = client.put(f"/api/articles/{article['id']}", headers=headers, json={"status": "draft"})
+    assert unpublished.json["item"]["published_at"] is None
+    assert client.delete(f"/api/articles/{article['id']}", headers=headers).status_code == 204
+
+
+def test_publisher_manages_draft_announcements_but_not_pages_or_publication(app, client):
+    publisher_id = create_user(app, "publisher@example.test", "publisher")
+    headers = bearer(app, publisher_id, "publisher")
+    created = client.post("/api/announcements", headers=headers, json={"title": "Notice", "body": "Details"})
+    assert created.status_code == 201
+    item = created.json["item"]
+    assert (item["author_id"], item["status"]) == (publisher_id, "draft")
+    assert client.put(f"/api/announcements/{item['id']}", headers=headers, json={"status": "published"}).status_code == 403
+    assert client.post("/api/pages", headers=headers, json={"title": "About", "slug": "about", "body": "Body"}).status_code == 403
+
+
+def test_admin_crud_for_pages_is_published_only_to_anonymous_users(app, client):
+    admin_id = create_user(app, "admin@example.test", "admin")
+    headers = bearer(app, admin_id, "admin")
+    created = client.post("/api/pages", headers=headers, json={"title": "About", "slug": "about", "body": "Body"})
+    assert created.status_code == 201
+    page_id = created.json["item"]["id"]
+    assert client.get("/api/pages/slug/about").status_code == 404
+    assert client.put(f"/api/pages/{page_id}", headers=headers, json={"status": "published"}).status_code == 200
+    assert client.get("/api/pages/slug/about").json["item"]["slug"] == "about"
+    assert client.delete(f"/api/pages/{page_id}", headers=headers).status_code == 204
+
+
+@pytest.mark.parametrize(
+    "endpoint,payload",
+    [
+        ("/api/articles", {"title": "Missing relationships", "slug": "bad", "body": "Body"}),
+        ("/api/announcements", {"title": "", "body": "Body"}),
+        ("/api/pages", {"title": "Page", "slug": "bad slug", "body": "Body"}),
+    ],
+)
+def test_content_create_rejects_invalid_payloads_with_safe_json(app, client, endpoint, payload):
+    admin_id = create_user(app, f"admin-{endpoint.rsplit('/', 1)[-1]}@example.test", "admin")
+    response = client.post(endpoint, headers=bearer(app, admin_id, "admin"), json=payload)
+    assert response.status_code == 400
+    assert response.json == {"error": "Invalid content data"}
+
+
+def test_duplicate_slug_and_unknown_relationships_are_safe_errors(app, client):
+    admin_id = create_user(app, "admin@example.test", "admin")
+    category_id, _, _ = seed_relations(app, admin_id)
+    headers = bearer(app, admin_id, "admin")
+    assert client.post("/api/articles", headers=headers, json=article_payload(category_id)).status_code == 201
+    duplicate = client.post("/api/articles", headers=headers, json=article_payload(category_id))
+    assert duplicate.status_code == 409
+    assert duplicate.json == {"error": "Slug is already in use"}
+    unknown = client.post("/api/articles", headers=headers, json=article_payload(category_id, slug="unknown", tag_ids=[9999]))
+    assert unknown.status_code == 400
+    assert unknown.json == {"error": "Invalid content data"}
