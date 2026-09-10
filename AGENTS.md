@@ -8,6 +8,8 @@ These instructions apply to the entire repository.
 - Use test-driven development for application behavior and add regression tests for every fix.
 - Never use `db.create_all()` for managed schema changes. Generate, review, test, and commit Alembic revisions.
 - Never commit secrets, credentials, uploaded media, caches, or generated build artifacts.
+- Treat uploads as untrusted: enforce size and decoded-content allowlists, generate storage names, and keep storage behind an adapter.
+- Never fetch arbitrary external media URLs or persist raw embed HTML; provider integrations must use explicit, sanitized adapters.
 - Enforce authorization on the backend. Frontend visibility rules are never security controls.
 - Use numeric role levels and centralized authentication and authorization helpers.
 - Return consistent JSON errors without exposing credentials, password hashes, tokens, or internal exceptions.

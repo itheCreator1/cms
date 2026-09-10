@@ -112,7 +112,7 @@ Design and implement database models for:
 - **Page** — id, title, slug, body, status (draft/published), author_id (FK to User), updated_at (for static pages like About/Contact)
 - **Category** — id, name, slug
 - **Tag** — id, name, slug (many-to-many with Article)
-- **Media** — id, filename, url, uploaded_by (FK to User), uploaded_at, file_type
+- **Media** — id, filename, url, uploaded_by (FK to User), uploaded_at, file_type, source_type, media_type, provider, storage_key, alt_text. Milestone 4 supports locally stored images and external HTTPS links through the same source-aware record. Provider metadata is descriptive only: the backend does not fetch arbitrary URLs or store raw embed HTML.
 
 Use an ORM (SQLAlchemy) to define these models and their relationships. Include foreign key constraints and appropriate indexes on slug fields.
 
@@ -162,6 +162,7 @@ backend/
 - `GET` endpoints for public content should only return `status=published` items when no valid auth token is present
 - `POST/PUT/DELETE` endpoints must check both authentication AND role/ownership (a Publisher can only edit their own drafts; Admin+ can edit anyone's)
 - Media upload endpoint that accepts file uploads and stores them (local disk storage is fine for now; return a URL)
+- External media-link creation for HTTPS URLs, with known-provider classification and no server-side preview fetch. Rich oEmbed/provider adapters, additional upload types, and Markdown rendering remain later extensions of this boundary.
 - User management endpoints (`/api/users`) restricted to Admin (view/manage Publishers) and Superadmin (view/manage everyone including Admins)
 
 **Other requirements:**

@@ -2,6 +2,8 @@
 
 Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is complete. The following work remains for the full CMS described in `spec.md`.
 
+Milestone 4 is the active backend-administration milestone. It covers taxonomy CRUD, secure image uploads, external media links, and guarded user administration. Markdown rendering, rich provider embeds, and non-image uploads remain later work.
+
 ## Backend
 
 - [x] Implement the User, Article, Announcement, Page, Category, Tag, and Media domain models.
