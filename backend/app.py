@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from backend import models  # noqa: F401 -- import models for migration discovery
 from backend.config import Config
 from backend.extensions import db, migrate
 from backend.routes import blueprints
