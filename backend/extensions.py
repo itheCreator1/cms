@@ -17,5 +17,8 @@ naming_convention = {
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 migrate = Migrate()
 jwt = JWTManager()
-# request.remote_addr is the safe default until a known reverse proxy is configured.
-limiter = Limiter(key_func=get_remote_address)
+
+
+def create_limiter(app):
+    # request.remote_addr is safe until a known reverse proxy is configured.
+    return Limiter(key_func=get_remote_address, app=app)

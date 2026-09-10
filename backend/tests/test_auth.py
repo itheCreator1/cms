@@ -23,19 +23,25 @@ class AuthTestConfig:
 @pytest.fixture(scope="module")
 def app(postgres_database_url):
     from backend.app import create_app
+    from backend.utils.auth_helpers import role_required
 
     AuthTestConfig.SQLALCHEMY_DATABASE_URI = postgres_database_url
     application = create_app(AuthTestConfig)
 
     @application.get("/api/publisher-area")
+    @role_required("publisher")
     def publisher_area():
-        from backend.utils.auth_helpers import role_required
+        return jsonify(ok=True)
 
-        @role_required("publisher")
-        def protected():
-            return jsonify(ok=True)
+    @application.get("/api/admin-area")
+    @role_required("admin")
+    def admin_area():
+        return jsonify(ok=True)
 
-        return protected()
+    @application.get("/api/superadmin-area")
+    @role_required("superadmin")
+    def superadmin_area():
+        return jsonify(ok=True)
 
     with application.app_context():
         upgrade(directory="migrations")
@@ -45,15 +51,13 @@ def app(postgres_database_url):
 
 @pytest.fixture(autouse=True)
 def clean_database(app):
-    from backend import extensions
-
-    db = extensions.db
+    from backend.extensions import db
 
     with app.app_context():
         db.session.execute(text("TRUNCATE TABLE users, categories CASCADE"))
         db.session.commit()
-    if hasattr(extensions, "limiter"):
-        extensions.limiter.reset()
+    for app_limiter in app.extensions.get("limiter", set()):
+        app_limiter.reset()
 
     yield
 
@@ -157,6 +161,36 @@ def test_signup_rejects_non_json_requests_with_json_error(client):
     assert response.status_code == 400
     assert response.content_type == "application/json"
     assert response.json == {"error": "Invalid signup data"}
+
+
+@pytest.mark.parametrize(
+    "email",
+    [
+        f"{'a' * 244}@example.test",
+        "control\x00@example.test",
+        "control\n@example.test",
+    ],
+)
+@pytest.mark.parametrize(
+    "endpoint,error_message",
+    [
+        ("/api/signup", "Invalid signup data"),
+        ("/api/login", "Invalid login data"),
+        ("/api/superadmin-login", "Invalid login data"),
+    ],
+)
+def test_auth_endpoints_reject_overlong_or_control_email_as_safe_json(
+    client, endpoint, error_message, email
+):
+    response = client.post(
+        endpoint,
+        json={"email": email, "password": "correct horse battery staple"},
+    )
+
+    assert response.status_code == 400
+    assert response.content_type == "application/json"
+    assert response.json == {"error": error_message}
+    assert email not in response.get_data(as_text=True)
 
 
 @pytest.mark.parametrize("role", ["visitor", "publisher", "admin"])
@@ -327,6 +361,72 @@ def test_superadmin_login_logs_timestamp_ip_and_outcome_without_credentials_or_t
     assert response.json["access_token"] not in captured
 
 
+def test_denied_malformed_and_rate_limited_superadmin_attempts_are_all_safely_logged(
+    app, client, monkeypatch
+):
+    from backend.extensions import db
+    from backend.models import User
+    from backend.utils.security_logging import security_logger
+
+    denied_email = "denied-admin@example.test"
+    denied_password = "denied admin password"
+    create_user(app, denied_email, password=denied_password, role="admin")
+    with app.app_context():
+        denied_hash = db.session.execute(
+            db.select(User.password_hash).where(User.email == denied_email)
+        ).scalar_one()
+
+    log_output = StringIO()
+    handler = next(
+        handler
+        for handler in security_logger.handlers
+        if getattr(handler, "_cms_auth_handler", False)
+    )
+    monkeypatch.setattr(handler, "stream", log_output)
+
+    denied = client.post(
+        "/api/superadmin-login",
+        json={"email": denied_email, "password": denied_password},
+        environ_base={"REMOTE_ADDR": "198.51.100.30"},
+    )
+    malformed = client.post(
+        "/api/superadmin-login",
+        json={"email": "missing-password@example.test"},
+        environ_base={"REMOTE_ADDR": "198.51.100.31"},
+    )
+    rate_responses = [
+        client.post(
+            "/api/superadmin-login",
+            json={
+                "email": "unknown@example.test",
+                "password": "unknown account password",
+            },
+            environ_base={"REMOTE_ADDR": "198.51.100.32"},
+        )
+        for _attempt in range(6)
+    ]
+    captured = log_output.getvalue()
+
+    assert denied.status_code == 401
+    assert malformed.status_code == 400
+    assert [response.status_code for response in rate_responses] == [
+        401,
+        401,
+        401,
+        401,
+        401,
+        429,
+    ]
+    assert captured.count("ip=198.51.100.30 outcome=failure") == 1
+    assert captured.count("ip=198.51.100.31 outcome=failure") == 1
+    assert captured.count("ip=198.51.100.32 outcome=failure") == 6
+    assert denied_email not in captured
+    assert denied_password not in captured
+    assert denied_hash not in captured
+    assert "missing-password@example.test" not in captured
+    assert "unknown@example.test" not in captured
+
+
 def test_regular_login_is_limited_to_twenty_attempts_per_remote_ip(client):
     for attempt in range(20):
         response = client.post(
@@ -466,3 +566,110 @@ def test_role_required_rejects_unknown_role_configuration():
 
     with pytest.raises(ValueError, match="Unknown role"):
         role_required("editor")
+
+
+@pytest.mark.parametrize(
+    "endpoint,role,expected_status",
+    [
+        ("/api/admin-area", "publisher", 403),
+        ("/api/admin-area", "admin", 200),
+        ("/api/admin-area", "superadmin", 200),
+        ("/api/superadmin-area", "admin", 403),
+        ("/api/superadmin-area", "superadmin", 200),
+    ],
+)
+def test_admin_and_superadmin_role_denial_boundaries(
+    app, client, endpoint, role, expected_status
+):
+    user_id = create_user(app, f"boundary-{role}@example.test", role=role)
+    token = make_token(app, str(user_id), role=role)
+
+    response = client.get(endpoint, headers=bearer(token))
+
+    assert response.status_code == expected_status
+    if expected_status == 403:
+        assert response.json == {"error": "Insufficient permissions"}
+    else:
+        assert response.json == {"ok": True}
+
+
+@pytest.mark.parametrize(
+    "token_role,current_role,expected_status",
+    [
+        ("admin", "visitor", 403),
+        ("visitor", "publisher", 200),
+    ],
+)
+def test_role_authorization_uses_current_database_role_not_stale_token_claim(
+    app, client, token_role, current_role, expected_status
+):
+    from backend.extensions import db
+    from backend.models import User, UserRole
+
+    user_id = create_user(app, f"stale-{token_role}@example.test", role=token_role)
+    token = make_token(app, str(user_id), role=token_role)
+    with app.app_context():
+        user = db.session.get(User, user_id)
+        user.role = UserRole(current_role)
+        db.session.commit()
+
+    response = client.get("/api/publisher-area", headers=bearer(token))
+
+    assert response.status_code == expected_status
+
+
+def test_limiter_enabled_state_is_isolated_between_application_instances(
+    postgres_database_url,
+):
+    from backend.app import create_app
+
+    class DisabledConfig(AuthTestConfig):
+        SQLALCHEMY_DATABASE_URI = postgres_database_url
+        RATELIMIT_ENABLED = False
+
+    class DefaultEnabledConfig:
+        TESTING = True
+        SECRET_KEY = "limiter-isolation-test-secret"
+        JWT_SECRET_KEY = "limiter-isolation-jwt-secret-over-32-bytes"
+        JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+        JWT_TOKEN_LOCATION = ["headers"]
+        SQLALCHEMY_DATABASE_URI = postgres_database_url
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        FRONTEND_ORIGIN = "http://frontend.test"
+        RATELIMIT_STORAGE_URI = "memory://"
+
+    disabled_app = create_app(DisabledConfig)
+    disabled_client = disabled_app.test_client()
+    disabled_statuses = [
+        disabled_client.post(
+            "/api/login",
+            json={"email": "unknown@example.test", "password": "wrong password value"},
+            environ_base={"REMOTE_ADDR": "203.0.113.80"},
+        ).status_code
+        for _attempt in range(21)
+    ]
+
+    enabled_app = create_app(DefaultEnabledConfig)
+    enabled_client = enabled_app.test_client()
+    enabled_statuses = [
+        enabled_client.post(
+            "/api/login",
+            json={"email": "unknown@example.test", "password": "wrong password value"},
+            environ_base={"REMOTE_ADDR": "203.0.113.81"},
+        ).status_code
+        for _attempt in range(21)
+    ]
+    disabled_after_enabled_statuses = [
+        disabled_client.post(
+            "/api/login",
+            json={"email": "unknown@example.test", "password": "wrong password value"},
+            environ_base={"REMOTE_ADDR": "203.0.113.82"},
+        ).status_code
+        for _attempt in range(21)
+    ]
+
+    assert disabled_statuses == [401] * 21
+    assert disabled_app.config["RATELIMIT_ENABLED"] is False
+    assert enabled_app.config["RATELIMIT_ENABLED"] is True
+    assert enabled_statuses == [401] * 20 + [429]
+    assert disabled_after_enabled_statuses == [401] * 21

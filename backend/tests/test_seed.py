@@ -13,7 +13,6 @@ class SeedTestConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FRONTEND_ORIGIN = "http://frontend.test"
     RATELIMIT_STORAGE_URI = "memory://"
-    RATELIMIT_ENABLED = False
 
 
 @pytest.fixture(scope="module")
@@ -136,3 +135,71 @@ def test_seed_promotes_existing_matching_account_without_creating_duplicate(app)
         assert users[0].id == existing_id
         assert users[0].role is UserRole.SUPERADMIN
         assert users[0].check_password("new superadmin password")
+
+
+@pytest.mark.parametrize(
+    "email",
+    [
+        f"{'a' * 244}@example.test",
+        "control\x00@example.test",
+        "control\n@example.test",
+    ],
+)
+def test_seed_rejects_overlong_or_control_email_without_database_error(
+    app, email, monkeypatch
+):
+    def seed_environment(name):
+        if name == "SEED_SUPERADMIN_EMAIL":
+            return email
+        if name == "SEED_SUPERADMIN_PASSWORD":
+            return "valid seed password"
+        return None
+
+    monkeypatch.setattr("backend.commands.os.getenv", seed_environment)
+    result = app.test_cli_runner().invoke(
+        args=["seed"],
+    )
+
+    assert result.exit_code != 0
+    assert "Seed credentials are invalid" in result.output
+    assert email not in result.output
+    assert "DataError" not in result.output
+
+
+def test_seed_preserves_separate_category_name_and_slug_matches_deterministically(app):
+    from backend.extensions import db
+    from backend.models import Category
+
+    with app.app_context():
+        name_match = Category(name="General", slug="existing-general-name")
+        slug_match = Category(name="Existing General Slug", slug="general")
+        db.session.add_all([name_match, slug_match])
+        db.session.commit()
+        original_rows = {
+            category.id: (category.name, category.slug)
+            for category in (name_match, slug_match)
+        }
+
+    runner = app.test_cli_runner()
+    seed_env = {
+        "SEED_SUPERADMIN_EMAIL": "root@example.test",
+        "SEED_SUPERADMIN_PASSWORD": "valid seed password",
+    }
+    first = runner.invoke(args=["seed"], env=seed_env)
+    second = runner.invoke(args=["seed"], env=seed_env)
+
+    assert first.exit_code == 0, first.output
+    assert second.exit_code == 0, second.output
+    with app.app_context():
+        preserved = {
+            category.id: (category.name, category.slug)
+            for category in db.session.execute(
+                db.select(Category).where(Category.id.in_(original_rows))
+            ).scalars()
+        }
+        assert preserved == original_rows
+        assert db.session.execute(
+            db.select(db.func.count(Category.id)).where(
+                (Category.name == "General") | (Category.slug == "general")
+            )
+        ).scalar_one() == 2

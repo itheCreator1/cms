@@ -1,17 +1,14 @@
-import re
-
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token, get_current_user
 from sqlalchemy.exc import IntegrityError
 
-from backend.extensions import db, limiter
+from backend.extensions import db
 from backend.models import User, UserRole
 from backend.utils.auth_helpers import login_required
 from backend.utils.security_logging import log_superadmin_attempt
+from backend.utils.validation import normalize_email
 
 blueprint = Blueprint("auth", __name__, url_prefix="/api")
-
-EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 def _signup_credentials():
@@ -20,10 +17,10 @@ def _signup_credentials():
         return None
     email = data.get("email")
     password = data.get("password")
-    if not isinstance(email, str) or not isinstance(password, str):
+    email = normalize_email(email)
+    if email is None or not isinstance(password, str):
         return None
-    email = email.strip().casefold()
-    if not EMAIL_PATTERN.fullmatch(email) or not 12 <= len(password) <= 128:
+    if not 12 <= len(password) <= 128:
         return None
     return email, password
 
@@ -34,10 +31,10 @@ def _login_credentials():
         return None
     email = data.get("email")
     password = data.get("password")
-    if not isinstance(email, str) or not isinstance(password, str):
+    email = normalize_email(email)
+    if email is None or not isinstance(password, str):
         return None
-    email = email.strip().casefold()
-    if not EMAIL_PATTERN.fullmatch(email) or not password or len(password) > 128:
+    if not password or len(password) > 128:
         return None
     return email, password
 
@@ -86,7 +83,6 @@ def signup():
 
 
 @blueprint.post("/login")
-@limiter.limit("20 per minute")
 def login():
     credentials = _login_credentials()
     if credentials is None:
@@ -108,7 +104,6 @@ def _superadmin_limit_breached(_request_limit):
 
 
 @blueprint.post("/superadmin-login")
-@limiter.limit("5 per minute", on_breach=_superadmin_limit_breached)
 def superadmin_login():
     credentials = _login_credentials()
     if credentials is None:
@@ -134,3 +129,12 @@ def superadmin_login():
 @login_required
 def me():
     return jsonify(user=_public_user(get_current_user()))
+
+
+def configure_auth_rate_limits(app, limiter):
+    app.view_functions["auth.login"] = limiter.limit("20 per minute")(
+        app.view_functions["auth.login"]
+    )
+    app.view_functions["auth.superadmin_login"] = limiter.limit(
+        "5 per minute", on_breach=_superadmin_limit_breached
+    )(app.view_functions["auth.superadmin_login"])

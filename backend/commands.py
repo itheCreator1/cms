@@ -2,11 +2,10 @@ import os
 
 import click
 from flask.cli import with_appcontext
-from sqlalchemy import or_
 
 from backend.extensions import db
 from backend.models import Category, User, UserRole
-from backend.routes.auth import EMAIL_PATTERN
+from backend.utils.validation import normalize_email
 
 
 INITIAL_CATEGORIES = (
@@ -26,8 +25,8 @@ def seed_command():
             "SEED_SUPERADMIN_EMAIL and SEED_SUPERADMIN_PASSWORD are required"
         )
 
-    email = email_value.strip().casefold()
-    if not EMAIL_PATTERN.fullmatch(email) or not 12 <= len(password) <= 128:
+    email = normalize_email(email_value)
+    if email is None or not 12 <= len(password) <= 128:
         raise click.ClickException("Seed credentials are invalid")
 
     user = db.session.execute(
@@ -40,10 +39,15 @@ def seed_command():
     user.set_password(password)
 
     for name, slug in INITIAL_CATEGORIES:
-        category = db.session.execute(
-            db.select(Category).where(or_(Category.name == name, Category.slug == slug))
+        name_match = db.session.execute(
+            db.select(Category).where(Category.name == name)
         ).scalar_one_or_none()
-        if category is None:
+        slug_match = db.session.execute(
+            db.select(Category).where(Category.slug == slug)
+        ).scalar_one_or_none()
+        # Either unique identifier being occupied makes insertion destructive or
+        # invalid. Preserve existing taxonomy and skip that seed category.
+        if name_match is None and slug_match is None:
             db.session.add(Category(name=name, slug=slug))
 
     db.session.commit()

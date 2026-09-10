@@ -62,6 +62,30 @@ def test_unknown_non_api_route_keeps_normal_html_404(client):
     assert response.content_type.startswith("text/html")
 
 
+def test_api_method_not_allowed_returns_consistent_json(client):
+    response = client.post("/api/health")
+
+    assert response.status_code == 405
+    assert response.content_type == "application/json"
+    assert response.json == {"error": "Method not allowed"}
+
+
+def test_unhandled_api_error_returns_sanitized_json_500(app):
+    secret_detail = "database-password=do-not-leak"
+    app.config["PROPAGATE_EXCEPTIONS"] = False
+
+    @app.get("/api/test-unhandled-error")
+    def test_unhandled_error():
+        raise RuntimeError(secret_detail)
+
+    response = app.test_client().get("/api/test-unhandled-error")
+
+    assert response.status_code == 500
+    assert response.content_type == "application/json"
+    assert response.json == {"error": "Internal server error"}
+    assert secret_detail not in response.get_data(as_text=True)
+
+
 @pytest.mark.parametrize(
     "module_name",
     [
