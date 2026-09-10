@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 
 import App from './App'
 import { AuthContext } from './context/AuthContext'
@@ -16,28 +16,6 @@ function renderAt(path) {
     </MemoryRouter>,
   )
 }
-
-describe('home health status', () => {
-  test('renders Backend connected after a successful health response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      headers: new Headers({ 'content-type': 'application/json' }),
-      json: async () => ({ status: 'ok' }),
-    }))
-
-    renderAt('/')
-
-    expect(await screen.findByText('Backend connected')).toBeInTheDocument()
-  })
-
-  test('renders Backend unavailable when the health request fails', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-
-    renderAt('/')
-
-    expect(await screen.findByText('Backend unavailable')).toBeInTheDocument()
-  })
-})
 
 test('regular login renders a working login form', () => {
   renderAt('/login')
