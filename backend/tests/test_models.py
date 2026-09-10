@@ -73,6 +73,11 @@ def test_domain_model_metadata_matches_the_cms_contract():
             "uploaded_by",
             "uploaded_at",
             "file_type",
+            "source_type",
+            "media_type",
+            "provider",
+            "storage_key",
+            "alt_text",
         },
     }
 
@@ -124,7 +129,15 @@ def test_domain_model_metadata_matches_the_cms_contract():
         models.Page: {"title", "slug", "body", "status", "author_id", "updated_at"},
         models.Category: {"name", "slug"},
         models.Tag: {"name", "slug"},
-        models.Media: {"filename", "url", "uploaded_by", "uploaded_at", "file_type"},
+        models.Media: {
+            "filename",
+            "url",
+            "uploaded_by",
+            "uploaded_at",
+            "file_type",
+            "source_type",
+            "media_type",
+        },
     }
     for model, names in required_columns.items():
         assert all(not _column(model, name).nullable for name in names)
@@ -132,6 +145,7 @@ def test_domain_model_metadata_matches_the_cms_contract():
     optional_columns = {
         models.Article: {"featured_image_id", "published_at"},
         models.Announcement: {"published_at", "expires_at"},
+        models.Media: {"provider", "storage_key", "alt_text"},
     }
     for model, names in optional_columns.items():
         assert all(_column(model, name).nullable for name in names)
@@ -160,7 +174,10 @@ def test_domain_model_metadata_matches_the_cms_contract():
         "uq_tags_name",
         "uq_tags_slug",
     }
-    assert _unique_constraint_names(models.Media) == {"uq_media_url"}
+    assert _unique_constraint_names(models.Media) == {
+        "uq_media_url",
+        "uq_media_storage_key",
+    }
     assert _index_names(models.Article) == {"ix_articles_slug"}
     assert _index_names(models.Page) == {"ix_pages_slug"}
     assert _index_names(models.Category) == {"ix_categories_slug"}
@@ -255,6 +272,11 @@ def test_domain_models_persist_relationships_and_defaults_in_postgresql(
         url="/media/front-page.jpg",
         uploader=author,
         file_type="image/jpeg",
+        source_type="upload",
+        media_type="image",
+        provider="local",
+        storage_key="front-page.jpg",
+        alt_text="Front page",
     )
     article = Article(
         title="Front page",
@@ -295,6 +317,10 @@ def test_domain_models_persist_relationships_and_defaults_in_postgresql(
     assert article.updated_at.tzinfo is not None
     assert announcement.created_at.tzinfo is not None
     assert image.uploaded_at.tzinfo is not None
+    assert image.source_type == "upload"
+    assert image.media_type == "image"
+    assert image.provider == "local"
+    assert image.alt_text == "Front page"
 
 
 def test_postgresql_enforces_unique_email(postgres_session):

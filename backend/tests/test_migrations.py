@@ -86,7 +86,8 @@ def test_first_revision_round_trips_the_postgresql_domain_schema(postgres_app):
             "uq_tags_slug",
         }
         assert {item["name"] for item in inspector.get_unique_constraints("media")} == {
-            "uq_media_url"
+            "uq_media_url",
+            "uq_media_storage_key",
         }
         assert "ix_articles_slug" in {
             item["name"] for item in inspector.get_indexes("articles")
@@ -126,3 +127,74 @@ def test_first_revision_round_trips_the_postgresql_domain_schema(postgres_app):
         upgrade(directory="migrations")
 
     assert expected_tables <= set(inspect(db.engine).get_table_names())
+
+
+def test_media_asset_revision_preserves_existing_rows_and_downgrades(postgres_app):
+    from flask_migrate import downgrade, upgrade
+
+    from backend.extensions import db
+
+    try:
+        upgrade(directory="migrations", revision="5e2d9a6b1c44")
+        with db.engine.begin() as connection:
+            user_id = connection.execute(
+                text(
+                    "INSERT INTO users (email, password_hash, role) "
+                    "VALUES ('legacy@example.test', 'hash', 'admin') RETURNING id"
+                )
+            ).scalar_one()
+            connection.execute(
+                text(
+                    "INSERT INTO media (filename, url, uploaded_by, file_type) "
+                    "VALUES ('legacy.jpg', '/legacy.jpg', :user_id, 'image/jpeg')"
+                ),
+                {"user_id": user_id},
+            )
+
+        upgrade(directory="migrations")
+        columns = {
+            column["name"]: column for column in inspect(db.engine).get_columns("media")
+        }
+        assert {"source_type", "media_type", "provider", "storage_key", "alt_text"} <= set(columns)
+        assert not columns["source_type"]["nullable"]
+        assert not columns["media_type"]["nullable"]
+        with db.engine.begin() as connection:
+            legacy = connection.execute(
+                text(
+                    "SELECT source_type, media_type, provider, storage_key, alt_text "
+                    "FROM media WHERE url = '/legacy.jpg'"
+                )
+            ).mappings().one()
+            assert dict(legacy) == {
+                "source_type": "upload",
+                "media_type": "image",
+                "provider": None,
+                "storage_key": None,
+                "alt_text": None,
+            }
+            connection.execute(
+                text(
+                    "INSERT INTO media "
+                    "(filename, url, uploaded_by, file_type, source_type, media_type, provider) "
+                    "VALUES ('youtube.com', 'https://youtube.com/watch?v=1', :user_id, "
+                    "'text/uri-list', 'external', 'video', 'youtube')"
+                ),
+                {"user_id": user_id},
+            )
+
+        downgrade(directory="migrations", revision="5e2d9a6b1c44")
+        column_names = {
+            column["name"] for column in inspect(db.engine).get_columns("media")
+        }
+        assert not {
+            "source_type",
+            "media_type",
+            "provider",
+            "storage_key",
+            "alt_text",
+        } & column_names
+        with db.engine.connect() as connection:
+            assert connection.execute(text("SELECT count(*) FROM media")).scalar_one() == 2
+    finally:
+        db.session.remove()
+        upgrade(directory="migrations")
