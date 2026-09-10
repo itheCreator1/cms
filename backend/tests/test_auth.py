@@ -217,6 +217,7 @@ def test_regular_login_returns_bearer_jwt_with_string_identity_and_role_claim(
         decoded = decode_token(response.json["access_token"])
     assert decoded["sub"] == str(user_id)
     assert decoded["role"] == role
+    assert decoded["auth_channel"] == "regular"
 
     me = client.get("/api/me", headers=bearer(response.json["access_token"]))
     assert me.status_code == 200
@@ -254,6 +255,8 @@ def test_regular_login_rejects_invalid_request_as_json(client):
 
 
 def test_superadmin_login_succeeds_only_for_superadmin(app, client):
+    from flask_jwt_extended import decode_token
+
     create_user(app, "root@example.test", role="superadmin")
 
     response = client.post(
@@ -268,6 +271,9 @@ def test_superadmin_login_succeeds_only_for_superadmin(app, client):
     assert response.status_code == 200
     assert response.json["user"]["role"] == "superadmin"
     assert response.json["access_token"]
+    with app.app_context():
+        decoded = decode_token(response.json["access_token"])
+    assert decoded["auth_channel"] == "superadmin"
 
 
 @pytest.mark.parametrize(
@@ -476,7 +482,10 @@ def make_token(app, identity, role="visitor", expires_delta=None):
     with app.app_context():
         return create_access_token(
             identity=identity,
-            additional_claims={"role": role},
+            additional_claims={
+                "role": role,
+                "auth_channel": "superadmin" if role == "superadmin" else "regular",
+            },
             expires_delta=expires_delta,
         )
 
@@ -616,6 +625,22 @@ def test_role_authorization_uses_current_database_role_not_stale_token_claim(
     response = client.get("/api/publisher-area", headers=bearer(token))
 
     assert response.status_code == expected_status
+
+
+def test_regular_token_cannot_become_superadmin_session_after_promotion(app, client):
+    from backend.extensions import db
+    from backend.models import User, UserRole
+
+    user_id = create_user(app, "promoted@example.test", role="admin")
+    token = make_token(app, str(user_id), role="admin")
+    with app.app_context():
+        db.session.get(User, user_id).role = UserRole.SUPERADMIN
+        db.session.commit()
+
+    response = client.get("/api/me", headers=bearer(token))
+
+    assert response.status_code == 401
+    assert response.json == {"error": "Authentication required"}
 
 
 def test_limiter_enabled_state_is_isolated_between_application_instances(
