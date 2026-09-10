@@ -1,0 +1,4 @@
+.card { display: grid; gap: var(--space-4) var(--space-8); grid-template-columns: minmax(12rem, .8fr) minmax(14rem, 1.6fr) auto; padding-block: 1.3rem; border-top: 1px solid var(--line); }
+.title { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.03; margin: 0; text-wrap: balance; }
+.body { margin: 0; }
+@media (max-width: 52rem) { .card { gap: .35rem; grid-template-columns: 1fr; } }

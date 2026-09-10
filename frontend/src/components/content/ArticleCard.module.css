@@ -1,0 +1,14 @@
+.card { border-top: 1px solid var(--ink); display: flex; flex-direction: column; grid-column: span 4; min-width: 0; padding-top: var(--space-4); }
+.lead { border-bottom: 1px solid var(--line); border-top: 0; display: grid; gap: clamp(1.5rem, 4vw, 4rem); grid-column: 1 / -1; grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 1fr); padding-bottom: var(--space-10); padding-top: 0; }
+.imageLink { background: var(--paper-dark); display: block; overflow: hidden; }
+.imageLink img { display: block; height: 15rem; object-fit: cover; transition: transform .25s ease; width: 100%; }
+.lead .imageLink img { height: 100%; min-height: 24rem; }
+.imageLink:hover img { transform: scale(1.02); }
+.content { padding-top: var(--space-4); }
+.title { font-family: var(--font-display); font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1.03; margin: 0 0 .8rem; text-wrap: balance; }
+.lead .title { font-size: clamp(2.4rem, 5vw, 4.8rem); }
+.title a { text-decoration: none; }
+.title a:hover { color: var(--rust); }
+.summary { color: #4f534d; }
+@media (max-width: 52rem) { .card { grid-column: span 6; } .lead { grid-column: 1 / -1; grid-template-columns: 1fr; } }
+@media (max-width: 36rem) { .card { grid-column: 1 / -1; } .lead .imageLink img { min-height: 16rem; } }

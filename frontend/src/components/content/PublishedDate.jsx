@@ -4,8 +4,9 @@ export default function PublishedDate({ value, label = 'Published' }) {
   if (Number.isNaN(date.getTime())) return null
 
   return (
-    <time dateTime={value}>
+    <time className={styles.date} dateTime={value}>
       {label} {new Intl.DateTimeFormat('en', { dateStyle: 'long' }).format(date)}
     </time>
   )
 }
+import styles from './PublishedDate.module.css'

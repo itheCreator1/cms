@@ -1,0 +1,2 @@
+.rail { background: var(--paper-dark); border-top: var(--border-strong) solid var(--rust); padding: clamp(1.25rem, 3vw, 2rem); }
+.heading { align-items: baseline; display: flex; gap: var(--space-4); justify-content: space-between; margin-bottom: var(--space-6); }

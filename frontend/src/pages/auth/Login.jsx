@@ -3,6 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../../context/AuthContext'
 import { hasMinimumRole } from '../../auth/roles'
+import Button from '../../components/ui/Button'
+import FormField from '../../components/ui/FormField'
+import styles from './AuthPage.module.css'
+import typography from '../../components/ui/Typography.module.css'
 
 export default function Login() {
   const { login } = useAuth()
@@ -31,22 +35,16 @@ export default function Login() {
   }
 
   return (
-    <section className="auth-panel">
-      <p className="eyebrow">Member access</p>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="email" />
-        </label>
-        <label>
-          Password
-          <input type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={isSubmitting}>
+    <section className={styles.panel}>
+      <p className={typography.eyebrow}>Member access</p>
+      <h1 className={typography.pageTitle}>Login</h1>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <FormField id="login-email" label="Email" type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="email" />
+        <FormField id="login-password" label="Password" type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" />
+        {error && <p className={styles.error} role="alert">{error}</p>}
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Logging in…' : 'Log in'}
-        </button>
+        </Button>
       </form>
     </section>
   )

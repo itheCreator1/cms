@@ -1,0 +1,5 @@
+.navigation { align-items: center; display: flex; flex-wrap: wrap; gap: .4rem var(--space-4); justify-content: flex-end; }
+.navigation a { color: var(--green); font-size: var(--text-sm); font-weight: 750; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; }
+.navigation a.active { color: var(--rust); text-decoration: underline; text-decoration-thickness: .12rem; text-underline-offset: .35rem; }
+.logout { padding: .35rem .65rem; }
+@media (max-width: 36rem) { .navigation { justify-content: flex-start; } }

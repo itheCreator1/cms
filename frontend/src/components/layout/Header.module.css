@@ -1,0 +1,5 @@
+.header { align-items: center; border-bottom: 1px solid var(--line); border-top: var(--border-strong) solid var(--ink); display: flex; gap: var(--space-8); justify-content: space-between; padding: var(--space-4) var(--page-gutter); }
+.brand { color: inherit; display: grid; line-height: 1; text-decoration: none; }
+.mark { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 900; letter-spacing: -.06em; }
+.tagline { color: var(--muted); font-size: var(--text-xs); font-weight: 800; letter-spacing: .13em; margin-top: .3rem; text-transform: uppercase; }
+@media (max-width: 36rem) { .header { align-items: flex-start; flex-direction: column; gap: var(--space-4); } }

@@ -1,0 +1,5 @@
+.section { min-width: 0; }
+.grid { display: grid; gap: var(--space-10) var(--space-6); grid-template-columns: repeat(12, 1fr); }
+.heading { align-items: baseline; border-bottom: 1px solid var(--line); display: flex; gap: var(--space-4); justify-content: space-between; margin-bottom: var(--space-6); padding-bottom: .8rem; }
+.metadataNote { color: #6c6a62; font-size: .78rem; }
+@media (max-width: 52rem) { .grid { grid-template-columns: repeat(12, 1fr); } }

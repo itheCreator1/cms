@@ -1,0 +1,5 @@
+.story, .notFound { margin-inline: auto; max-width: 62rem; }
+.storyHeader { border-bottom: .2rem solid var(--ink); padding-bottom: var(--space-8); }
+.storyImage { margin-block: var(--space-10); max-height: 38rem; object-fit: cover; width: 100%; }
+.notFound { max-width: 70rem; padding-block: 8vh; }
+.notFound p { max-width: 34rem; }

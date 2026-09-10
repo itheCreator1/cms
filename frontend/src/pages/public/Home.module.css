@@ -1,0 +1,1 @@
+.page { display: grid; gap: clamp(3rem, 7vw, 6rem); }

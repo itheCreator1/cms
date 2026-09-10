@@ -1,16 +1,19 @@
+import Button from './Button'
+import styles from './ContentState.module.css'
+
 export function LoadingState({ message = 'Loading…' }) {
-  return <p className="content-state" aria-live="polite">{message}</p>
+  return <p className={styles.state} aria-live="polite">{message}</p>
 }
 
 export function EmptyState({ message }) {
-  return <p className="content-state content-state--empty">{message}</p>
+  return <p className={`${styles.state} ${styles.empty}`}>{message}</p>
 }
 
 export function ErrorState({ message, onRetry }) {
   return (
-    <div className="content-state content-state--error" role="alert">
+    <div className={`${styles.state} ${styles.error}`} role="alert">
       <p>{message}</p>
-      <button type="button" className="text-button" onClick={onRetry}>Try again</button>
+      <Button onClick={onRetry}>Try again</Button>
     </div>
   )
 }

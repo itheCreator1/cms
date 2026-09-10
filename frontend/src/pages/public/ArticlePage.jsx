@@ -8,6 +8,8 @@ import { useAsyncResource } from '../../hooks/useAsyncResource'
 import { resolveApiUrl } from '../../services/api'
 import { getPublishedArticle } from '../../services/articles'
 import { listCategories } from '../../services/categories'
+import styles from './PublicPage.module.css'
+import typography from '../../components/ui/Typography.module.css'
 
 export default function ArticlePage() {
   const { slug } = useParams()
@@ -21,11 +23,11 @@ export default function ArticlePage() {
   if (article.status === 'loading') return <LoadingState message="Loading story…" />
   if (article.status === 'error' && article.error?.status === 404) {
     return (
-      <section className="not-found">
-        <p className="eyebrow">404</p>
-        <h1>Story not found</h1>
+      <section className={styles.notFound}>
+        <p className={typography.eyebrow}>404</p>
+        <h1 className={typography.pageTitle}>Story not found</h1>
         <p>This story is unavailable or has not been published.</p>
-        <Link className="text-link" to="/">Return home</Link>
+        <Link className={typography.textLink} to="/">Return home</Link>
       </section>
     )
   }
@@ -34,13 +36,13 @@ export default function ArticlePage() {
   const item = article.data
   const image = item.featured_image
   return (
-    <article className="story-page">
-      <header className="story-page__header">
-        {categoryNames.get(item.category_id) && <p className="eyebrow">{categoryNames.get(item.category_id)}</p>}
-        <h1>{item.title}</h1>
+    <article className={styles.story}>
+      <header className={styles.storyHeader}>
+        {categoryNames.get(item.category_id) && <p className={typography.eyebrow}>{categoryNames.get(item.category_id)}</p>}
+        <h1 className={typography.pageTitle}>{item.title}</h1>
         <PublishedDate value={item.published_at || item.created_at} />
       </header>
-      {image && <img className="story-page__image" src={resolveApiUrl(image.url)} alt={image.alt_text || ''} />}
+      {image && <img className={styles.storyImage} src={resolveApiUrl(image.url)} alt={image.alt_text || ''} />}
       <PlainTextBody body={item.body} />
     </article>
   )

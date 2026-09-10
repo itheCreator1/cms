@@ -1,0 +1,4 @@
+.page { margin-inline: auto; max-width: 70rem; }
+.header { border-bottom: .2rem solid var(--ink); padding-bottom: var(--space-8); }
+.summary { color: var(--copy-muted); font-family: var(--font-display); font-size: 1.25rem; max-width: 40rem; }
+.list { margin-top: var(--space-8); }

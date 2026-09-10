@@ -1,0 +1,2 @@
+.footer { border-top: 1px solid var(--line); color: var(--muted); display: flex; font-size: var(--text-sm); gap: var(--space-4); justify-content: space-between; padding: var(--space-6) var(--page-gutter); }
+@media (max-width: 36rem) { .footer { flex-direction: column; } }

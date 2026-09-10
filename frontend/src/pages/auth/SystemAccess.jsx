@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../../context/AuthContext'
+import Button from '../../components/ui/Button'
+import FormField from '../../components/ui/FormField'
+import styles from './AuthPage.module.css'
+import typography from '../../components/ui/Typography.module.css'
 
 export default function SystemAccess() {
   const { superadminLogin } = useAuth()
@@ -26,23 +30,17 @@ export default function SystemAccess() {
   }
 
   return (
-    <section className="system-access auth-panel">
-      <p className="eyebrow">Restricted entry point</p>
-      <h1>System access</h1>
+    <section className={`${styles.panel} ${styles.systemAccess}`}>
+      <p className={typography.eyebrow}>Restricted entry point</p>
+      <h1 className={typography.pageTitle}>System access</h1>
       <p>Superadmin accounts use this isolated sign-in.</p>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="email" />
-        </label>
-        <label>
-          Password
-          <input type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={isSubmitting}>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <FormField id="system-email" label="Email" type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="email" />
+        <FormField id="system-password" label="Password" type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" />
+        {error && <p className={styles.error} role="alert">{error}</p>}
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Entering…' : 'Enter system'}
-        </button>
+        </Button>
       </form>
     </section>
   )
