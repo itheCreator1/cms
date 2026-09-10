@@ -95,6 +95,7 @@ def test_domain_model_metadata_matches_the_cms_contract():
     assert _column(models.Article, "status").type.name == "article_status"
     assert _column(models.Announcement, "status").type.enums == [
         "draft",
+        "pending_review",
         "published",
     ]
     assert _column(models.Announcement, "status").type.name == "announcement_status"

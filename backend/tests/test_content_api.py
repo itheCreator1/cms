@@ -42,6 +42,13 @@ def clean_database(app):
     yield
     with app.app_context():
         db.session.rollback()
+        db.session.execute(
+            text(
+                "TRUNCATE TABLE article_tags, articles, announcements, pages, "
+                "media, tags, categories, users RESTART IDENTITY CASCADE"
+            )
+        )
+        db.session.commit()
         db.session.remove()
 
 
@@ -192,13 +199,20 @@ def test_admin_manages_any_article_and_controls_publication_timestamps(app, clie
     assert client.delete(f"/api/articles/{article['id']}", headers=headers).status_code == 204
 
 
-def test_publisher_manages_draft_announcements_but_not_pages_or_publication(app, client):
+def test_publisher_submits_own_draft_announcement_but_cannot_publish_or_manage_pages(app, client):
     publisher_id = create_user(app, "publisher@example.test", "publisher")
     headers = bearer(app, publisher_id, "publisher")
     created = client.post("/api/announcements", headers=headers, json={"title": "Notice", "body": "Details"})
     assert created.status_code == 201
     item = created.json["item"]
     assert (item["author_id"], item["status"]) == (publisher_id, "draft")
+    submitted = client.put(
+        f"/api/announcements/{item['id']}",
+        headers=headers,
+        json={"status": "pending_review"},
+    )
+    assert submitted.status_code == 200
+    assert submitted.json["item"]["status"] == "pending_review"
     assert client.put(f"/api/announcements/{item['id']}", headers=headers, json={"status": "published"}).status_code == 403
     assert client.post("/api/pages", headers=headers, json={"title": "About", "slug": "about", "body": "Body"}).status_code == 403
 

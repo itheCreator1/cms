@@ -33,6 +33,19 @@ def _enum_names(connection):
     )
 
 
+def _enum_values(connection, enum_name):
+    return list(
+        connection.execute(
+            text(
+                "SELECT enumlabel FROM pg_enum "
+                "JOIN pg_type ON pg_type.oid = pg_enum.enumtypid "
+                "WHERE typname = :enum_name ORDER BY enumsortorder"
+            ),
+            {"enum_name": enum_name},
+        ).scalars()
+    )
+
+
 def test_first_revision_round_trips_the_postgresql_domain_schema(postgres_app):
     from flask_migrate import downgrade, upgrade
 
@@ -95,6 +108,11 @@ def test_first_revision_round_trips_the_postgresql_domain_schema(postgres_app):
         assert article_columns["published_at"]["nullable"]
         with db.engine.connect() as connection:
             assert _enum_names(connection) == expected_enum_names
+            assert _enum_values(connection, "announcement_status") == [
+                "draft",
+                "pending_review",
+                "published",
+            ]
 
         db.session.remove()
         downgrade(directory="migrations", revision="base")
