@@ -10,9 +10,6 @@ from sqlalchemy import text
 PNG_1X1 = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 )
-ANIMATED_GIF = base64.b64decode(
-    "R0lGODlhAQABAIEAAAAAAP///wAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQACgAAACwAAAAAAQABAAAIBAABBAQAOw=="
-)
 
 
 class MediaTestConfig:
@@ -99,6 +96,22 @@ def upload(client, headers, content=PNG_1X1, filename="pixel.png", alt_text="Pix
     )
 
 
+def animated_gif():
+    from PIL import Image
+
+    output = io.BytesIO()
+    frames = [Image.new("RGB", (1, 1), color) for color in ("red", "blue")]
+    frames[0].save(
+        output,
+        format="GIF",
+        save_all=True,
+        append_images=frames[1:],
+        duration=100,
+        loop=0,
+    )
+    return output.getvalue()
+
+
 def test_admin_uploads_serves_updates_and_deletes_image(app, client):
     publisher_id = create_user(app, "media-publisher@example.test", "publisher")
     admin_id = create_user(app, "media-admin@example.test", "admin")
@@ -154,7 +167,7 @@ def test_upload_rejects_untrusted_or_oversized_images(app, client):
     for content, filename in (
         (b"not an image", "fake.png"),
         (b"<svg xmlns='http://www.w3.org/2000/svg'></svg>", "active.svg"),
-        (ANIMATED_GIF, "animated.gif"),
+        (animated_gif(), "animated.gif"),
     ):
         response = upload(client, headers, content, filename)
         assert response.status_code == 400

@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from pathlib import Path
 
 
 class Config:
@@ -16,3 +17,10 @@ class Config:
     JWT_TOKEN_LOCATION = ["headers"]
     JWT_HEADER_TYPE = "Bearer"
     RATELIMIT_STORAGE_URI = "memory://"
+    MEDIA_STORAGE_ROOT = os.getenv(
+        "MEDIA_STORAGE_ROOT",
+        str(Path(__file__).resolve().parent.parent / "var" / "media"),
+    )
+    MEDIA_MAX_BYTES = int(os.getenv("MEDIA_MAX_BYTES", str(10 * 1024 * 1024)))
+    MEDIA_MAX_PIXELS = int(os.getenv("MEDIA_MAX_PIXELS", "40000000"))
+    MAX_CONTENT_LENGTH = MEDIA_MAX_BYTES + 1024 * 1024

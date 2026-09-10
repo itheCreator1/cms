@@ -9,6 +9,7 @@ from backend.routes import blueprints
 from backend.routes.auth import configure_auth_rate_limits
 from backend.commands import seed_command
 from backend.utils.security_logging import configure_security_logging
+from backend.services.media_storage import LocalMediaStorage
 
 
 def create_app(config_object=Config):
@@ -17,6 +18,13 @@ def create_app(config_object=Config):
     app.config.from_object(config_object)
     app.config.setdefault("RATELIMIT_ENABLED", True)
     app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
+    app.config.setdefault("MEDIA_STORAGE_ROOT", Config.MEDIA_STORAGE_ROOT)
+    app.config.setdefault("MEDIA_MAX_BYTES", Config.MEDIA_MAX_BYTES)
+    app.config.setdefault("MEDIA_MAX_PIXELS", Config.MEDIA_MAX_PIXELS)
+    app.config.setdefault("MAX_CONTENT_LENGTH", Config.MAX_CONTENT_LENGTH)
+    app.extensions["media_storage"] = LocalMediaStorage(
+        app.config["MEDIA_STORAGE_ROOT"]
+    )
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -46,6 +54,7 @@ def create_app(config_object=Config):
             messages = {
                 404: "Not found",
                 405: "Method not allowed",
+                413: "Upload too large",
             }
             return jsonify(error=messages.get(error.code, error.name)), error.code
         return error

@@ -15,6 +15,7 @@ from backend.utils.content import (
     valid_slug,
     valid_text,
 )
+from backend.utils.media import serialize_media
 
 blueprint = Blueprint("articles", __name__, url_prefix="/api/articles")
 
@@ -29,6 +30,11 @@ def _serialize(article):
         "author_id": article.author_id,
         "category_id": article.category_id,
         "featured_image_id": article.featured_image_id,
+        "featured_image": (
+            serialize_media(article.featured_image)
+            if article.featured_image is not None
+            else None
+        ),
         "tag_ids": sorted(tag.id for tag in article.tags),
         "created_at": iso(article.created_at),
         "updated_at": iso(article.updated_at),
@@ -71,7 +77,9 @@ def _load_relations(payload, partial=False):
         if media_id is not None and (
             not isinstance(media_id, int)
             or isinstance(media_id, bool)
-            or db.session.get(Media, media_id) is None
+            or (media := db.session.get(Media, media_id)) is None
+            or media.source_type != "upload"
+            or media.media_type != "image"
         ):
             raise ValueError
         changes["featured_image_id"] = media_id

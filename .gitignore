@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 .vite/
 coverage/
+var/media/
 *.db
 .env
 .env.*

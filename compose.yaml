@@ -30,10 +30,14 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://cms:cms@db:5432/cms}
       SEED_SUPERADMIN_EMAIL: ${SEED_SUPERADMIN_EMAIL:-}
       SEED_SUPERADMIN_PASSWORD: ${SEED_SUPERADMIN_PASSWORD:-}
+      MEDIA_STORAGE_ROOT: ${MEDIA_STORAGE_ROOT:-/var/lib/cms/media}
+      MEDIA_MAX_BYTES: ${MEDIA_MAX_BYTES:-10485760}
+      MEDIA_MAX_PIXELS: ${MEDIA_MAX_PIXELS:-40000000}
     ports:
       - "5000:5000"
     volumes:
       - .:/app
+      - media_uploads:/var/lib/cms/media
     depends_on:
       db:
         condition: service_healthy
@@ -68,3 +72,4 @@ services:
 volumes:
   postgres_data:
   frontend_node_modules:
+  media_uploads:
