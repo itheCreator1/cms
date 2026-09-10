@@ -2,7 +2,7 @@
 
 Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is complete. The following work remains for the full CMS described in `spec.md`.
 
-Milestone 4 is the active backend-administration milestone. It covers taxonomy CRUD, secure image uploads, external media links, and guarded user administration. Markdown rendering, rich provider embeds, and non-image uploads remain later work.
+Milestone 4—taxonomy CRUD, secure image uploads, external media links, and guarded user administration—is complete. Markdown rendering, rich provider embeds, and non-image uploads remain later work.
 
 ## Backend
 
@@ -14,10 +14,10 @@ Milestone 4 is the active backend-administration milestone. It covers taxonomy C
 - [x] Add reusable authentication and numeric role-level authorization helpers.
 - [x] Enforce publisher ownership rules and Admin/Superadmin permission boundaries for articles, announcements, and pages.
 - [x] Implement CRUD APIs for articles, announcements, and pages.
-- [ ] Implement CRUD APIs for categories, tags, media, and users.
+- [x] Implement CRUD APIs for categories, tags, media, and users.
 - [x] Restrict unauthenticated article, announcement, and page responses to published records.
 - [x] Add request validation, consistent JSON errors, and appropriate HTTP status codes for the authentication foundation.
-- [ ] Implement media uploads, local file storage, and returned media URLs.
+- [x] Implement media uploads, local file storage, and returned media URLs.
 - [x] Add a seed command that creates a Superadmin and sample categories using credentials from environment variables.
 - [x] Add the seed and JWT variables to `.env.example` without committing credentials.
 
@@ -40,10 +40,10 @@ Milestone 4 is the active backend-administration milestone. It covers taxonomy C
 - [x] Add model and migration tests against PostgreSQL.
 - [x] Test signup, login, JWT validation, Superadmin isolation, and role hierarchy behavior.
 - [x] Test ownership and authorization boundaries for article, announcement, and page operations.
-- [ ] Test ownership and authorization boundaries for taxonomy, media, and user operations.
+- [x] Test ownership and authorization boundaries for taxonomy, media, and user operations.
 - [x] Test seed validation, idempotency, and collision handling.
 - [x] Test content-core CRUD validation and public-content filtering.
-- [ ] Test taxonomy/user CRUD validation and uploads.
+- [x] Test taxonomy/user CRUD validation and uploads.
 - [x] Test frontend authentication persistence, protected routes, role-aware navigation, and both login screens.
 - [ ] Test public content and dashboard workflows.
 - [ ] Add end-to-end coverage for critical public and authenticated user journeys.

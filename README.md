@@ -2,9 +2,7 @@
 
 This repository contains a Dockerized role-based CMS built with Flask, React, and PostgreSQL. Docker Compose is the canonical runtime: it starts PostgreSQL 18, the Flask API, and the Vite/React frontend together with health checks and source reload.
 
-Milestones 1 and 2 are complete: the repository includes the runnable application skeleton, domain schema and Alembic migration, backend authentication, JWT sessions, numeric role enforcement, Superadmin isolation, rate limits, and frontend login/session restoration.
-
-Milestone 3 adds backend authorization and CRUD for articles, announcements, and pages, including Publisher ownership boundaries and published-only public responses. Taxonomy and user management, media uploads, public content screens, and the complete dashboard remain later work.
+Milestones 1–4 are complete: the repository includes the runnable application skeleton, migrated domain schema, JWT authentication, numeric role enforcement, frontend session restoration, content CRUD, taxonomy management, guarded user administration, and a secure media library. Public content screens and the complete dashboard remain later work.
 
 ## Requirements
 
@@ -49,7 +47,7 @@ Remove containers and the network while retaining volumes:
 docker compose down
 ```
 
-Only use `docker compose down --volumes` when you intentionally want to erase local PostgreSQL data and the container-managed frontend dependencies.
+Only use `docker compose down --volumes` when you intentionally want to erase local PostgreSQL data, uploaded media, and the container-managed frontend dependencies.
 
 Rebuild after changing dependencies or Dockerfiles:
 
@@ -91,6 +89,8 @@ docker compose exec backend flask seed
 
 The frontend stores the short-lived access token under `cms_access_token`, restores it through `/api/me`, attaches it as a bearer token, and clears it on logout or an invalid session. The `/system-access` route is intentionally unlinked from navigation and calls only the Superadmin endpoint.
 
+Tokens record whether they came from regular or Superadmin login. If an Admin is promoted to Superadmin, their existing regular token is rejected and they must authenticate through `/system-access`; authorization always uses the current database role.
+
 ## Content API
 
 The content API uses JSON request and response bodies. Collection responses use `{"items": [...]}` and individual resources use `{"item": {...}}`.
@@ -102,11 +102,29 @@ The content API uses JSON request and response bodies. Collection responses use 
 
 Publishers can create and manage only their own draft articles and announcements, and can submit them with `status: "pending_review"`. Submitted content becomes read-only to its Publisher until an Admin acts on it. Admins and Superadmins can manage any content, publish it with `status: "published"`, or return it to draft. Only Admins and Superadmins can create or manage pages.
 
-Article requests require an existing `category_id`. Optional `tag_ids` and `featured_image_id` values must reference existing records. Category, tag, and media management endpoints are planned for later milestones; the seed command supplies initial categories.
+Article requests require an existing `category_id`. Optional `tag_ids` values must reference existing tags. A `featured_image_id` must reference an uploaded image; article responses retain that ID and include a nested `featured_image` object when present.
+
+## Administration API
+
+Category and tag collections are public so published content can resolve its taxonomy. Mutation requires Admin or Superadmin access:
+
+- `GET/POST /api/categories` and `GET/PUT/DELETE /api/categories/<id>`
+- `GET/POST /api/tags` and `GET/PUT/DELETE /api/tags/<id>`
+
+Media management requires Admin or Superadmin access:
+
+- `GET /api/media` and `GET/PUT/DELETE /api/media/<id>`
+- `POST /api/media/uploads` accepts a multipart `file` plus optional `alt_text`.
+- `POST /api/media/links` accepts an HTTPS `url` plus optional `alt_text`.
+- `GET /api/media/files/<storage-key>` publicly serves an uploaded image.
+
+Uploads accept JPEG, PNG, WebP, and non-animated GIF images. They are limited by `MEDIA_MAX_BYTES` and `MEDIA_MAX_PIXELS`, decoded and re-encoded, stripped of metadata, and stored under generated names in the persistent `media_uploads` volume. SVG is not accepted. External links are normalized and classified as YouTube, Facebook, Instagram, or generic without fetching the remote URL or accepting embed HTML.
+
+User management uses `GET/POST /api/users` and `GET/PUT/DELETE /api/users/<id>`. Admins can manage Publisher accounts only. Superadmins can manage every role, but cannot delete or demote their active account. Referenced taxonomy, media, and users return `409` until content is explicitly reassigned or detached.
 
 ## Database migrations
 
-The tracked Alembic history contains the initial CMS domain schema and the Milestone 3 announcement-review status revision.
+The tracked Alembic history contains the initial CMS domain schema, the announcement-review status revision, and the source-aware media asset revision.
 
 Apply revisions and inspect migration state:
 
@@ -126,10 +144,10 @@ Review the generated revision before applying it. `flask db init` is a one-time 
 
 ## Project layout
 
-- `backend/`: Flask application factory, extensions, domain models, authentication Blueprints, seed command, and pytest suite
+- `backend/`: Flask application factory, feature Blueprints, domain models, authentication/authorization helpers, media storage adapter, seed command, and pytest suite
 - `frontend/`: Vite/React application, router, persistent auth context, shared API client, login screens, and Vitest suite
 - `migrations/`: tracked Flask-Migrate/Alembic environment
-- `compose.yaml`: canonical development runtime and persistent volumes
+- `compose.yaml`: canonical development runtime with persistent PostgreSQL, uploaded-media, and frontend-dependency volumes
 
 ## Optional host-native troubleshooting
 
