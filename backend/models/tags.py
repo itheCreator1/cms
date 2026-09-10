@@ -1,0 +1,1 @@
+"""Tag model placeholder."""
