@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 
-import { apiRequest } from './api'
+import { apiRequest, resolveApiUrl } from './api'
 import { getHealth } from './health'
 
 afterEach(() => {
@@ -84,4 +84,27 @@ test('apiRequest preserves an explicitly supplied authorization header', async (
   expect(fetchMock.mock.calls[0][1].headers.get('Authorization')).toBe(
     'Bearer explicit-token',
   )
+})
+
+test('apiRequest omits a stored bearer token for an anonymous request', async () => {
+  localStorage.setItem('cms_access_token', 'stale-token')
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => ({ items: [] }),
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  await apiRequest('/articles', { auth: false })
+
+  expect(fetchMock.mock.calls[0][1].headers.has('Authorization')).toBe(false)
+  expect(fetchMock.mock.calls[0][1]).not.toHaveProperty('auth')
+})
+
+test.each([
+  ['/api/media/files/image.webp', 'http://localhost:5000/api/media/files/image.webp'],
+  ['https://cdn.example/image.webp', 'https://cdn.example/image.webp'],
+  [null, null],
+])('resolveApiUrl maps %s to %s', (url, expected) => {
+  expect(resolveApiUrl(url)).toBe(expected)
 })
