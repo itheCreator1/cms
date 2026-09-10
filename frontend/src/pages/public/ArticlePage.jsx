@@ -1,3 +1,47 @@
+import { useMemo } from 'react'
+import { Link, useParams } from 'react-router-dom'
+
+import PlainTextBody from '../../components/content/PlainTextBody'
+import PublishedDate from '../../components/content/PublishedDate'
+import { ErrorState, LoadingState } from '../../components/ui/ContentState'
+import { useAsyncResource } from '../../hooks/useAsyncResource'
+import { resolveApiUrl } from '../../services/api'
+import { getPublishedArticle } from '../../services/articles'
+import { listCategories } from '../../services/categories'
+
 export default function ArticlePage() {
-  return <><h1>Article</h1><p>Article placeholder</p></>
+  const { slug } = useParams()
+  const article = useAsyncResource(() => getPublishedArticle(slug), [slug])
+  const categories = useAsyncResource(listCategories)
+  const categoryNames = useMemo(
+    () => new Map((categories.data || []).map((category) => [category.id, category.name])),
+    [categories.data],
+  )
+
+  if (article.status === 'loading') return <LoadingState message="Loading story…" />
+  if (article.status === 'error' && article.error?.status === 404) {
+    return (
+      <section className="not-found">
+        <p className="eyebrow">404</p>
+        <h1>Story not found</h1>
+        <p>This story is unavailable or has not been published.</p>
+        <Link className="text-link" to="/">Return home</Link>
+      </section>
+    )
+  }
+  if (article.status === 'error') return <ErrorState message="This story is unavailable." onRetry={article.retry} />
+
+  const item = article.data
+  const image = item.featured_image
+  return (
+    <article className="story-page">
+      <header className="story-page__header">
+        {categoryNames.get(item.category_id) && <p className="eyebrow">{categoryNames.get(item.category_id)}</p>}
+        <h1>{item.title}</h1>
+        <PublishedDate value={item.published_at || item.created_at} />
+      </header>
+      {image && <img className="story-page__image" src={resolveApiUrl(image.url)} alt={image.alt_text || ''} />}
+      <PlainTextBody body={item.body} />
+    </article>
+  )
 }
