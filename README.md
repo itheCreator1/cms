@@ -2,7 +2,9 @@
 
 This repository contains a Dockerized role-based CMS built with Flask, React, and PostgreSQL. Docker Compose is the canonical runtime: it starts PostgreSQL 18, the Flask API, and the Vite/React frontend together with health checks and source reload.
 
-The current milestone includes the domain schema, Alembic migration, backend authentication, JWT sessions, numeric role enforcement, Superadmin isolation, rate limits, and frontend login/session restoration. Content CRUD, ownership enforcement, uploads, and the complete dashboard remain future work.
+Milestones 1 and 2 are complete: the repository includes the runnable application skeleton, domain schema and Alembic migration, backend authentication, JWT sessions, numeric role enforcement, Superadmin isolation, rate limits, and frontend login/session restoration.
+
+Milestone 3 is the current implementation target. It adds backend authorization and CRUD for articles, announcements, and pages, including Publisher ownership boundaries and published-only public responses. Taxonomy and user management, media uploads, public content screens, and the complete dashboard remain later work.
 
 ## Requirements
 
