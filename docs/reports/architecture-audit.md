@@ -15,9 +15,13 @@
 | Maintainability | 4.3/5   | Excellent readability, tests, and error handling                |
 | **Overall**     | **3.8/5** | Well-structured early-stage project with clear discipline, but lacks the abstractions needed to scale efficiently |
 
+**Maturity context:** This audit covers a Milestone 2 project with authentication foundations complete but CRUD, frontend features, and most content endpoints still stubbed. The 3.8/5 overall score reflects structural discipline above what's typical at this stage — the main gaps are expected growing pains (missing abstractions, stale docs) rather than fundamental design errors.
+
 ---
 
 ## 1. Expandability — 3.0/5
+
+The Blueprint-per-feature pattern and application factory provide a solid foundation for adding new API features. However, the absence of a base content model and a centralized role registry means every new entity requires significant copy-paste across 8–10 files.
 
 ### 1.1 Adding a New Content Type (e.g. "Event") — 3/5
 
@@ -33,7 +37,7 @@
 | `frontend/src/App.jsx` | Add new `<Route>` entries |
 | Frontend pages | Create page components (new) |
 
-**6–10 files** must be touched per new content type.
+**8–10 files** must be touched per new content type.
 
 - ✅ Blueprint pattern is consistent and clean
 - ✅ Models follow uniform conventions (title, slug, body, status, author FK, timestamps)
@@ -101,6 +105,8 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 
 ## 2. Modularity — 4.0/5
 
+Backend layers are cleanly separated with exemplary model independence and infrastructure design. The main weakness is the auth route, which absorbs too many responsibilities, and the lack of a validation/serialization framework.
+
 ### 2.1 Backend Separation of Concerns — 4/5
 
 - ✅ Routes are mostly pure HTTP handlers — the auth route contains ORM queries (`routes/auth.py:70,92-94,114-115`)
@@ -125,7 +131,6 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 - ✅ Consistent `ondelete="RESTRICT"` and `passive_deletes=True`
 - ✅ Association table lives with the owning model
 - ✅ Centralized `__all__` re-export in `models/__init__.py`
-- ❌ None identified
 
 ### 2.4 Frontend Component Boundaries — 3/5
 
@@ -177,15 +182,16 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 
 ## 3. Maintainability — 4.3/5
 
+The codebase is exceptionally readable and well-tested with outstanding error handling and dependency hygiene. The primary debt is the stale README and missing `.env.example` entries, both of which are quick wins.
+
 ### 3.1 Code Consistency — 4/5
 
-- ✅ All models follow similar conventions — `server_default=db.func.now()` where timestamps exist, consistent constraint naming
-- ❌ Timestamp columns are inconsistent: `created_at` (users, articles, announcements), `updated_at` (articles, pages), `uploaded_at` (media), none (categories, tags); `onupdate` in only 2/7 models
 - ✅ Enum definitions consistently use `values_callable` and `validate_strings`
 - ✅ Constraint naming follows `extensions.py:9-15` convention
 - ✅ All route files export a `blueprint` variable
 - ✅ Backend uses `backend.` prefix for all imports
 - ✅ Error responses use `jsonify(error="...")` uniformly
+- ❌ Timestamp columns are inconsistent: `created_at` (users, articles, announcements), `updated_at` (articles, pages), `uploaded_at` (media), none (categories, tags); `onupdate` in only 2/7 models
 - ❌ Spec says singular filenames (`user.py`) but code uses plural (`users.py`)
 - ❌ `TestConfig` pattern duplicated across 4 test files (`test_auth.py`, `test_seed.py`, `test_models.py`, `test_migrations.py`)
 
@@ -199,7 +205,7 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 
 ### 3.3 Test Coverage and Quality — 4/5
 
-- ✅ 5 backend test files, ~1,444 lines total
+- ✅ 5 backend test files, 1,444 lines total
 - ✅ Tests run against real PostgreSQL with UUID-isolated databases
 - ✅ Excellent use of `@pytest.mark.parametrize` for boundary testing
 - ✅ Security-focused: credential leakage, timing attacks, stale token claims all tested
@@ -267,6 +273,8 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 ---
 
 ## 4. Priority Recommendations
+
+> Five claims were corrected during independent fact-checking (see §6). The recommendations below reflect the corrected findings.
 
 | #  | Action | Dimension     | Impact | Effort |
 |----|--------|---------------|--------|--------|
