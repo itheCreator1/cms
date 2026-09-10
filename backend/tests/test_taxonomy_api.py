@@ -167,5 +167,5 @@ def test_referenced_taxonomy_cannot_be_deleted(app, client):
     headers = bearer(app, admin_id, "admin")
     for resource, item_id in (("categories", category_id), ("tags", tag_id)):
         response = client.delete(f"/api/{resource}/{item_id}", headers=headers)
-        assert response.status_code == 409
+        assert response.status_code == 409, resource
         assert response.json == {"error": "Resource is in use"}

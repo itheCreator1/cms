@@ -14,5 +14,8 @@ class Tag(db.Model):
     slug = db.Column(db.String(100), nullable=False)
 
     articles = db.relationship(
-        "Article", secondary="article_tags", back_populates="tags"
+        "Article",
+        secondary="article_tags",
+        back_populates="tags",
+        passive_deletes=True,
     )
