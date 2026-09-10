@@ -10,9 +10,10 @@ Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is 
 - [x] Implement public signup and regular login with password hashing and JWT issuance.
 - [x] Implement the separate superadmin login endpoint with stricter rate limiting and attempt logging.
 - [x] Add reusable authentication and numeric role-level authorization helpers.
-- [ ] Enforce publisher ownership rules and Admin/Superadmin permission boundaries on the backend.
-- [ ] Implement CRUD APIs for articles, announcements, pages, categories, tags, media, and users.
-- [ ] Restrict unauthenticated content responses to published records.
+- [x] Enforce publisher ownership rules and Admin/Superadmin permission boundaries for articles, announcements, and pages.
+- [x] Implement CRUD APIs for articles, announcements, and pages.
+- [ ] Implement CRUD APIs for categories, tags, media, and users.
+- [x] Restrict unauthenticated article, announcement, and page responses to published records.
 - [x] Add request validation, consistent JSON errors, and appropriate HTTP status codes for the authentication foundation.
 - [ ] Implement media uploads, local file storage, and returned media URLs.
 - [x] Add a seed command that creates a Superadmin and sample categories using credentials from environment variables.
@@ -36,9 +37,11 @@ Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is 
 
 - [x] Add model and migration tests against PostgreSQL.
 - [x] Test signup, login, JWT validation, Superadmin isolation, and role hierarchy behavior.
-- [ ] Test ownership and authorization boundaries for every protected API operation.
+- [x] Test ownership and authorization boundaries for article, announcement, and page operations.
+- [ ] Test ownership and authorization boundaries for taxonomy, media, and user operations.
 - [x] Test seed validation, idempotency, and collision handling.
-- [ ] Test CRUD validation, public-content filtering, and uploads.
+- [x] Test content-core CRUD validation and public-content filtering.
+- [ ] Test taxonomy/user CRUD validation and uploads.
 - [x] Test frontend authentication persistence, protected routes, role-aware navigation, and both login screens.
 - [ ] Test public content and dashboard workflows.
 - [ ] Add end-to-end coverage for critical public and authenticated user journeys.

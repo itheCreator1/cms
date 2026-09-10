@@ -4,7 +4,7 @@ This repository contains a Dockerized role-based CMS built with Flask, React, an
 
 Milestones 1 and 2 are complete: the repository includes the runnable application skeleton, domain schema and Alembic migration, backend authentication, JWT sessions, numeric role enforcement, Superadmin isolation, rate limits, and frontend login/session restoration.
 
-Milestone 3 is the current implementation target. It adds backend authorization and CRUD for articles, announcements, and pages, including Publisher ownership boundaries and published-only public responses. Taxonomy and user management, media uploads, public content screens, and the complete dashboard remain later work.
+Milestone 3 adds backend authorization and CRUD for articles, announcements, and pages, including Publisher ownership boundaries and published-only public responses. Taxonomy and user management, media uploads, public content screens, and the complete dashboard remain later work.
 
 ## Requirements
 
@@ -91,9 +91,22 @@ docker compose exec backend flask seed
 
 The frontend stores the short-lived access token under `cms_access_token`, restores it through `/api/me`, attaches it as a bearer token, and clears it on logout or an invalid session. The `/system-access` route is intentionally unlinked from navigation and calls only the Superadmin endpoint.
 
+## Content API
+
+The content API uses JSON request and response bodies. Collection responses use `{"items": [...]}` and individual resources use `{"item": {...}}`.
+
+- `GET /api/articles` and `GET /api/articles/slug/<slug>` expose published articles publicly.
+- `GET /api/announcements` exposes current published announcements publicly and omits expired announcements.
+- `GET /api/pages` and `GET /api/pages/slug/<slug>` expose published pages publicly.
+- Authenticated management uses the collection endpoints plus `GET`, `PUT`, and `DELETE` at `/<id>`.
+
+Publishers can create and manage only their own draft articles and announcements, and can submit them with `status: "pending_review"`. Submitted content becomes read-only to its Publisher until an Admin acts on it. Admins and Superadmins can manage any content, publish it with `status: "published"`, or return it to draft. Only Admins and Superadmins can create or manage pages.
+
+Article requests require an existing `category_id`. Optional `tag_ids` and `featured_image_id` values must reference existing records. Category, tag, and media management endpoints are planned for later milestones; the seed command supplies initial categories.
+
 ## Database migrations
 
-The Alembic environment in `migrations/` is tracked, and its `versions/` directory is intentionally empty in Milestone 1. There is no synthetic schema revision.
+The tracked Alembic history contains the initial CMS domain schema and the Milestone 3 announcement-review status revision.
 
 Apply revisions and inspect migration state:
 
@@ -103,7 +116,7 @@ docker compose exec backend flask db current
 docker compose exec backend flask db heads
 ```
 
-When a later milestone introduces reviewed models, create a revision with:
+When a model change requires a schema revision, create it with:
 
 ```sh
 docker compose exec backend flask db migrate -m "describe schema change"

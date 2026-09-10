@@ -1,6 +1,6 @@
 # Milestone 3 Content Core Plan
 
-## Status: in progress
+## Status: complete
 
 Milestone 3 establishes the backend content-management boundary before frontend content workflows are added.
 
@@ -15,7 +15,7 @@ Milestone 3 establishes the backend content-management boundary before frontend 
 
 Publishers do not manage pages and cannot edit or delete submitted or published content. Admins and Superadmins manage all three content types and control publication. Invalid bearer tokens continue to return the authentication API's consistent JSON `401` response rather than being treated as anonymous.
 
-The existing domain schema supports this milestone, so no Alembic revision is expected. Any discovered schema requirement must be handled through a separately reviewed migration.
+Review found that announcement review submission required a `pending_review` enum value that was absent from the original schema. A separate reviewed Alembic revision adds that value and supports upgrade/downgrade testing.
 
 ## Deferred
 
