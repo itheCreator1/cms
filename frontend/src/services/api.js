@@ -3,18 +3,19 @@ import { getAccessToken } from './tokenStorage'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 
 export async function apiRequest(path, options = {}) {
-  const headers = new Headers(options.headers)
+  const { auth = true, ...fetchOptions } = options
+  const headers = new Headers(fetchOptions.headers)
   const token = getAccessToken()
-  if (token && !headers.has('Authorization')) {
+  if (auth && token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`)
   }
-  if (options.body && !headers.has('Content-Type')) {
+  if (fetchOptions.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
   const response = await fetch(
     `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`,
-    { ...options, headers },
+    { ...fetchOptions, headers },
   )
   const contentType = response.headers.get('content-type') || ''
   const data = contentType.includes('application/json') ? await response.json() : null
@@ -27,4 +28,13 @@ export async function apiRequest(path, options = {}) {
   }
 
   return data
+}
+
+export function resolveApiUrl(url) {
+  if (!url || /^https?:\/\//i.test(url)) return url
+
+  const origin = /^https?:\/\//i.test(API_BASE_URL)
+    ? new URL(API_BASE_URL).origin
+    : window.location.origin
+  return new URL(url, `${origin}/`).toString()
 }
