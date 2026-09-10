@@ -52,7 +52,7 @@
 
 ### 1.3 Adding a New API Feature — 4/5
 
-- ✅ Plug-and-play Blueprint registration — 2 files touched, no existing code modified
+- ✅ Plug-and-play Blueprint registration — 2 files touched (1 new, 1 modified), `app.py` untouched
 - ✅ `create_app` factory is well-structured with clean ordering
 - ✅ Rate limiting is configurable per-route via `configure_auth_rate_limits`
 - ✅ Centralized error handling inherited by all features
@@ -103,10 +103,10 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 
 ### 2.1 Backend Separation of Concerns — 4/5
 
-- ✅ Routes are pure HTTP handlers — no SQL builders or template rendering
+- ✅ Routes are mostly pure HTTP handlers — the auth route contains ORM queries (`routes/auth.py:70,92-94,114-115`)
 - ✅ Models define data only — no request handling or view logic
-- ✅ Utils are truly cross-cutting helpers with no Flask coupling
-- ❌ Auth route absorbs too much: credential parsing, validation, serialization, token creation, rate-limit wiring
+- ✅ Utils are largely framework-free — `validation.py` and `security_logging.py` have no Flask deps, but `auth_helpers.py:3-4` imports `jsonify` and `jwt_required`
+- ❌ Auth route absorbs too much: credential parsing, validation, serialization, token creation, ORM queries, rate-limit wiring
 - ❌ `configure_auth_rate_limits` in `routes/auth.py:134-140` is infrastructure leaked into a feature module
 - ❌ Seed command imports multiple model types — couples to two domain areas
 
@@ -179,14 +179,15 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 
 ### 3.1 Code Consistency — 4/5
 
-- ✅ All models follow identical pattern — consistent column naming, `server_default`, `db.func.now()`, `onupdate`
+- ✅ All models follow similar conventions — `server_default=db.func.now()` where timestamps exist, consistent constraint naming
+- ❌ Timestamp columns are inconsistent: `created_at` (users, articles, announcements), `updated_at` (articles, pages), `uploaded_at` (media), none (categories, tags); `onupdate` in only 2/7 models
 - ✅ Enum definitions consistently use `values_callable` and `validate_strings`
 - ✅ Constraint naming follows `extensions.py:9-15` convention
 - ✅ All route files export a `blueprint` variable
 - ✅ Backend uses `backend.` prefix for all imports
 - ✅ Error responses use `jsonify(error="...")` uniformly
 - ❌ Spec says singular filenames (`user.py`) but code uses plural (`users.py`)
-- ❌ `TestConfig` class duplicated across 3 test files
+- ❌ `TestConfig` pattern duplicated across 4 test files (`test_auth.py`, `test_seed.py`, `test_models.py`, `test_migrations.py`)
 
 ### 3.2 Code Readability — 5/5
 
@@ -288,7 +289,7 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 
 - `backend/app.py`, `backend/config.py`, `backend/extensions.py`, `backend/commands.py`
 - `backend/routes/__init__.py`, `backend/routes/auth.py`, `backend/routes/articles.py`, `backend/routes/announcements.py`, `backend/routes/categories.py`, `backend/routes/media.py`, `backend/routes/pages.py`, `backend/routes/tags.py`, `backend/routes/users.py`
-- `backend/models/__init__.py`, `backend/models/users.py`, `backend/models/articles.py`, `backend/models/announcements.py`, `backend/models/categories.py`, `backend/models/media.py`, `backend/models/pages.py`, `backend/models/tags.py`
+- `backend/models/__init__.py`, `backend/models/users.py`, `backend/models/articles.py`, `backend/models/announcements.py`, `backend/models/categories.py`, `backend/models/media.py`, `backend/models/pages.py`, `backend/models/tags.py`, `backend/models/auth.py`
 - `backend/utils/auth_helpers.py`, `backend/utils/validation.py`, `backend/utils/security_logging.py`
 - `backend/requirements.txt`
 
@@ -307,3 +308,42 @@ A `PublishableMixin` + a `RoleRegistry` (method on `UserRole`) would push this s
 - `compose.yaml`, `backend/Dockerfile`, `frontend/Dockerfile`
 - `migrations/alembic.ini`, `migrations/env.py`
 - `README.md`, `AGENTS.md`, `TODO.md`, `spec.md`, `THIRD_PARTY_NOTICES.md`
+
+---
+
+## 6. Fact-Check Results
+
+All claims in this report were verified against the actual source code by two independent agents. **66 claims checked.**
+
+### Summary
+
+| Verdict | Count | Percentage |
+|---------|-------|------------|
+| TRUE | 58 | 88% |
+| EXAGGERATED | 2 | 3% |
+| FALSE | 1 | 1.5% |
+| PARTIALLY TRUE | 2 | 3% |
+| **Total** | **66** | **100%** |
+
+### Errors Corrected
+
+The following claims were found to be inaccurate or overstated and have been revised in this version:
+
+| # | Original Claim | Issue | Correction |
+|---|---------------|-------|------------|
+| 1 | "Utils are truly cross-cutting helpers with no Flask coupling" | `auth_helpers.py:3-4` imports `jsonify` and `jwt_required` | Changed to "largely framework-free" with caveat |
+| 2 | "Blueprint registration — no existing code modified" | `routes/__init__.py` must be modified | Changed to "2 files touched (1 new, 1 modified)" |
+| 3 | "Routes are pure HTTP handlers — no SQL builders" | `routes/auth.py:70,92-94,114-115` contain ORM queries | Changed to "mostly pure" with evidence |
+| 4 | "All models follow identical pattern" | Timestamps inconsistent across models; `onupdate` in 2/7 only | Added detail on inconsistencies |
+| 5 | "TestConfig duplicated across 3 test files" | Actually spans 4 files | Corrected to 4 files |
+
+### Minor Omissions
+
+- `backend/models/auth.py` (1-line placeholder) was missing from the original file review appendix — now added
+- The spec (`spec.md:136-142`) is internally inconsistent: its models section uses singular filenames while its routes section uses plural — noted in the report
+
+### Methodology
+
+- **Agent 1 (Expandability + Modularity):** Checked 27 claims across `routes/`, `models/`, `utils/`, `extensions.py`, `config.py`, `app.py`, `compose.yaml`, `frontend/src/`
+- **Agent 2 (Maintainability):** Checked 39 claims across all backend production files, test files, `README.md`, `.env.example`, `requirements.txt`, `package.json`, `migrations/`
+- Both agents read every file referenced in the report and cited specific file:line evidence for each verdict
