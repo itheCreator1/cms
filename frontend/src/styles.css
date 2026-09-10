@@ -12,8 +12,16 @@ header { display: flex; align-items: center; justify-content: space-between; bor
 .brand { color: inherit; font-size: 1.4rem; font-weight: 800; text-decoration: none; }
 nav { display: flex; gap: 1rem; }
 nav a { color: #355846; }
+nav button, form button { border: 0; border-radius: .35rem; background: #355846; color: #fff; cursor: pointer; padding: .65rem 1rem; font: inherit; }
+nav button { padding: .35rem .65rem; }
+nav button:disabled, form button:disabled { cursor: wait; opacity: .65; }
 main { display: grid; align-items: center; }
 h1 { max-width: 16ch; font-family: Georgia, serif; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: .95; }
 .eyebrow { color: #a2482d; font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.system-access { border-left: .4rem solid #a2482d; padding-left: 1.5rem; }
+.auth-panel { width: min(100%, 32rem); }
+.auth-panel form { display: grid; gap: 1rem; }
+.auth-panel label { display: grid; gap: .35rem; font-weight: 700; }
+.auth-panel input { border: 1px solid #aaa392; border-radius: .35rem; box-sizing: border-box; padding: .75rem; font: inherit; }
+.auth-panel [role="alert"] { color: #a2482d; margin: 0; }
+.system-access { border-left: .4rem solid #a2482d; background: #eee5d7; padding: 1.5rem; }
 footer { border-top: 1px solid #c9c3b4; color: #5d665f; }

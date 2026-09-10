@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import App from './App'
+import { AuthContext } from './context/AuthContext'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -38,18 +39,20 @@ describe('home health status', () => {
   })
 })
 
-test('regular login explains Milestone 1 availability', () => {
+test('regular login renders a working login form', () => {
   renderAt('/login')
 
   expect(screen.getByRole('heading', { name: 'Login' })).toBeInTheDocument()
-  expect(screen.getByText('Login is not available in Milestone 1')).toBeInTheDocument()
+  expect(screen.getByLabelText('Email')).toBeInTheDocument()
+  expect(screen.getByLabelText('Password')).toBeInTheDocument()
 })
 
-test('system access is a distinct unavailable page', () => {
+test('system access is a distinct working login page', () => {
   renderAt('/system-access')
 
   expect(screen.getByRole('heading', { name: 'System access' })).toBeInTheDocument()
-  expect(screen.getByText('Login is not available in Milestone 1')).toBeInTheDocument()
+  expect(screen.getByLabelText('Email')).toBeInTheDocument()
+  expect(screen.getByLabelText('Password')).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Login' })).not.toBeInTheDocument()
 })
 
@@ -63,3 +66,13 @@ test.each(['/dashboard', '/dashboard/articles/new', '/dashboard/anything/nested'
     })
   },
 )
+
+test('dashboard is available to an authenticated publisher', () => {
+  render(
+    <AuthContext.Provider value={{ isRestoring: false, token: 'token', user: { role: 'publisher' } }}>
+      <MemoryRouter initialEntries={['/dashboard']}><App /></MemoryRouter>
+    </AuthContext.Provider>,
+  )
+
+  expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+})

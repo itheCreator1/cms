@@ -20,7 +20,7 @@ export default function App() {
         <Route path="pages/:slug" element={<PageView />} />
         <Route path="login" element={<Login />} />
         <Route path="system-access" element={<SystemAccess />} />
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute minimumRole="publisher" />}>
           <Route path="dashboard/*" element={<DashboardHome />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

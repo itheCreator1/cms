@@ -5,6 +5,7 @@ import { getHealth } from './health'
 
 afterEach(() => {
   vi.restoreAllMocks()
+  localStorage.clear()
 })
 
 test('apiRequest joins the base URL and parses JSON', async () => {
@@ -48,5 +49,39 @@ test('getHealth requests the health path', async () => {
   expect(fetchMock).toHaveBeenCalledWith(
     'http://localhost:5000/api/health',
     expect.any(Object),
+  )
+})
+
+test('apiRequest attaches the stored bearer token', async () => {
+  localStorage.setItem('cms_access_token', 'access-token')
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => ({ ok: true }),
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  await apiRequest('/protected')
+
+  expect(fetchMock.mock.calls[0][1].headers.get('Authorization')).toBe(
+    'Bearer access-token',
+  )
+})
+
+test('apiRequest preserves an explicitly supplied authorization header', async () => {
+  localStorage.setItem('cms_access_token', 'stored-token')
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => ({ ok: true }),
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  await apiRequest('/protected', {
+    headers: { Authorization: 'Bearer explicit-token' },
+  })
+
+  expect(fetchMock.mock.calls[0][1].headers.get('Authorization')).toBe(
+    'Bearer explicit-token',
   )
 })
