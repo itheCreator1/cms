@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 
-import PlainTextBody from '../../components/content/PlainTextBody'
+import BodyBlocks from '../../components/content/BodyBlocks'
 import PublishedDate from '../../components/content/PublishedDate'
 import { ErrorState, LoadingState } from '../../components/ui/ContentState'
 import { useAsyncResource } from '../../hooks/useAsyncResource'
@@ -32,7 +32,7 @@ export default function PageView() {
         <h1 className={typography.pageTitle}>{page.data.title}</h1>
         <PublishedDate value={page.data.updated_at} label="Updated" />
       </header>
-      <PlainTextBody body={page.data.body} />
+      <BodyBlocks blocks={page.data.body_blocks} body={page.data.body} />
     </article>
   )
 }

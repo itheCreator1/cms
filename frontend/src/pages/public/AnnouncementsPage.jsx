@@ -1,4 +1,5 @@
 import AnnouncementCard from '../../components/content/AnnouncementCard'
+import BodyBlocks from '../../components/content/BodyBlocks'
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/ContentState'
 import { useAsyncResource } from '../../hooks/useAsyncResource'
 import { listPublishedAnnouncements } from '../../services/announcements'
@@ -25,7 +26,7 @@ export default function AnnouncementsPage() {
       {announcements.status === 'success' && items.length === 0 && <EmptyState message="There are no active announcements." />}
       {announcements.status === 'success' && items.length > 0 && (
         <div className={styles.list} aria-label="Published announcements">
-          {items.map((item) => <AnnouncementCard key={item.id} announcement={item} />)}
+          {items.map((item) => <article key={item.id}><AnnouncementCard announcement={item} /><BodyBlocks blocks={item.body_blocks} body={item.body} /></article>)}
         </div>
       )}
     </section>

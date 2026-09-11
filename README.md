@@ -97,6 +97,8 @@ Tokens record whether they came from regular or Superadmin login. If an Admin is
 
 ## Content API
 
+Authenticated dashboard routes cover article and announcement lists/editors for Publishers, plus page management for Admins and Superadmins: `/dashboard/articles`, `/dashboard/announcements`, and `/dashboard/pages`. Editors support ordered text and picture blocks, status workflows, private picture previews, and expiry dates for announcements.
+
 The content API uses JSON request and response bodies. Collection responses use `{"items": [...]}` and individual resources use `{"item": {...}}`.
 
 - `GET /api/articles` and `GET /api/articles/slug/<slug>` expose published articles publicly.

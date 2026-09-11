@@ -8,7 +8,7 @@ Milestone 5—the editorial public homepage and published article, announcement,
 
 The reusable frontend foundation is the prerequisite for Milestone 6. It establishes the shared layouts, navigation, controls, theme tokens, and homepage composition conventions that the dashboard and publisher-picture work will use.
 
-Milestone 6 has begun with ordered text-and-picture content blocks, publisher media permissions, the article draft/review/publication workflow, picture upload/reuse controls, authenticated dashboard previews, and public article picture rendering. Announcement/page dashboards and final acceptance remain.
+Milestone 6 implementation is complete for ordered text-and-picture blocks, publisher media permissions, article/announcement/page dashboard workflows, draft/review/publication controls, picture upload/reuse, authenticated previews, and public picture rendering. Final acceptance remains blocked on confirmation in the originally affected browser.
 
 ## Frontend stabilization gate
 
@@ -49,9 +49,9 @@ Milestone 6 has begun with ordered text-and-picture content blocks, publisher me
 - [x] Fetch and render published announcements and articles on the homepage.
 - [x] Fetch and render public article, announcement, and page routes.
 - [x] Implement public article, announcement, page, and category API services.
-- [ ] Implement dashboard content, tag, media, and user API services.
-- [ ] Build the role-aware dashboard and editable content lists.
-- [ ] Add article and announcement editors with draft, review, publish, and unpublish workflows.
+- [x] Implement dashboard content, tag, media, and user API services.
+- [x] Build the role-aware dashboard and editable content lists.
+- [x] Add article and announcement editors with draft, review, publish, and unpublish workflows.
 - [ ] Add category and tag management, the media library/uploader, and user administration screens.
 - [ ] Show dashboard sections and actions according to Publisher, Admin, and Superadmin permissions.
 - [ ] Add Superadmin-authorized site-wide settings persistence, API validation, and dashboard management screens.
