@@ -15,7 +15,7 @@ Milestone 6 implementation is complete for ordered text-and-picture blocks, publ
 - [x] Restore the normal Vite development command and restart the frontend.
 - [x] Run Compose frontend tests (42), backend tests (119), and frontend build; verify fresh Firefox startup and public empty/not-found states.
 - [ ] Capture the affected browser’s failed `PageView.jsx` request and console error, reproduce the failure, and add a regression test before any application behavior fix.
-- [ ] Confirm the affected browser renders the homepage, both login screens, and published detail routes without failed application modules or uncaught startup errors before starting Milestone 6. See [acceptance evidence](docs/reports/frontend-stabilization.md).
+- [ ] Confirm the affected browser renders the homepage, both login screens, and published detail routes without failed application modules or uncaught startup errors before closing Milestone 6. See [acceptance evidence](docs/reports/frontend-stabilization.md).
 
 ## Backend
 
@@ -53,7 +53,7 @@ Milestone 6 implementation is complete for ordered text-and-picture blocks, publ
 - [x] Build the role-aware dashboard and editable content lists.
 - [x] Add article and announcement editors with draft, review, publish, and unpublish workflows.
 - [ ] Add category and tag management, the media library/uploader, and user administration screens.
-- [ ] Show dashboard sections and actions according to Publisher, Admin, and Superadmin permissions.
+- [x] Show dashboard sections and actions according to Publisher, Admin, and Superadmin permissions.
 - [ ] Add Superadmin-authorized site-wide settings persistence, API validation, and dashboard management screens.
 
 ## Testing
@@ -67,7 +67,7 @@ Milestone 6 implementation is complete for ordered text-and-picture blocks, publ
 - [x] Test taxonomy/user CRUD validation and uploads.
 - [x] Test frontend authentication persistence, protected routes, role-aware navigation, and both login screens.
 - [x] Test public content workflows, failures, retries, ordering, and safe body rendering.
-- [ ] Test dashboard workflows.
+- [x] Test dashboard workflows.
 - [ ] Add end-to-end coverage for critical public and authenticated user journeys.
 - [x] Run the full Compose acceptance sequence after each completed milestone.
 

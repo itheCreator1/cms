@@ -114,7 +114,7 @@ Content requests may send either a plain-text `body` or an ordered `body_blocks`
 
 ## Public frontend
 
-The article dashboard preserves existing text/picture blocks and publication status on ordinary saves. Draft authors can upload or reuse permitted pictures, add and reorder text sections, detach pictures, and preview private uploads without placing credentials in image URLs. Publishers edit drafts and submit saved drafts for review, while Admins and Superadmins can publish, unpublish, or return submitted work to draft. Announcement and page dashboard workflows are still in progress.
+The article dashboard preserves existing text/picture blocks and publication status on ordinary saves. Draft authors can upload or reuse permitted pictures, add and reorder text sections, detach pictures, and preview private uploads without placing credentials in image URLs. Publishers edit drafts and submit saved drafts for review, while Admins and Superadmins can publish, unpublish, or return submitted work to draft. Announcement and page dashboards provide the same ordered-block editing and status workflows, with announcement expiry and Admin-gated page management.
 
 The public React routes are available without login:
 
