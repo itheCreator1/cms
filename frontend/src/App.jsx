@@ -8,6 +8,10 @@ import SystemAccess from './pages/auth/SystemAccess'
 import DashboardHome from './pages/dashboard/DashboardHome'
 import ArticleEditor from './pages/dashboard/ArticleEditor'
 import ArticleList from './pages/dashboard/ArticleList'
+import AnnouncementEditor from './pages/dashboard/AnnouncementEditor'
+import AnnouncementList from './pages/dashboard/AnnouncementList'
+import PageEditor from './pages/dashboard/PageEditor'
+import PageList from './pages/dashboard/PageList'
 import AnnouncementsPage from './pages/public/AnnouncementsPage'
 import ArticlePage from './pages/public/ArticlePage'
 import Home from './pages/public/Home'
@@ -33,6 +37,14 @@ export default function App() {
           <Route path="dashboard/articles" element={<ArticleList />} />
           <Route path="dashboard/articles/new" element={<ArticleEditor />} />
           <Route path="dashboard/articles/:id/edit" element={<ArticleEditor />} />
+          <Route path="dashboard/announcements" element={<AnnouncementList />} />
+          <Route path="dashboard/announcements/new" element={<AnnouncementEditor />} />
+          <Route path="dashboard/announcements/:id/edit" element={<AnnouncementEditor />} />
+          <Route element={<ProtectedRoute minimumRole="admin" />}>
+            <Route path="dashboard/pages" element={<PageList />} />
+            <Route path="dashboard/pages/new" element={<PageEditor />} />
+            <Route path="dashboard/pages/:id/edit" element={<PageEditor />} />
+          </Route>
           <Route path="dashboard/*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>

@@ -5,4 +5,35 @@ export async function getPublishedPage(slug) {
   return item
 }
 
-export const pageService = Object.freeze({ getPublishedPage })
+export async function listPages() {
+  const { items } = await apiRequest('/pages')
+  return items
+}
+
+export async function getPage(id) {
+  const { item } = await apiRequest(`/pages/${id}`)
+  return item
+}
+
+export async function createPage(payload) {
+  const { item } = await apiRequest('/pages', { method: 'POST', body: JSON.stringify(payload) })
+  return item
+}
+
+export async function updatePage(id, payload) {
+  const { item } = await apiRequest(`/pages/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+  return item
+}
+
+export async function deletePage(id) {
+  await apiRequest(`/pages/${id}`, { method: 'DELETE' })
+}
+
+export const pageService = Object.freeze({
+  getPublished: getPublishedPage,
+  list: listPages,
+  get: getPage,
+  create: createPage,
+  update: updatePage,
+  delete: deletePage,
+})

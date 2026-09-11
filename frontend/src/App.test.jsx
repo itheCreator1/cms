@@ -64,3 +64,27 @@ test('visitor navigation omits the Publisher dashboard link', () => {
 
   expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument()
 })
+
+test.each([
+  ['/dashboard/announcements/new', 'New announcement'],
+  ['/dashboard/pages/new', 'New page'],
+])('authenticated dashboard exposes the %s editor route', async (path, heading) => {
+  const role = path.includes('/pages/') ? 'admin' : 'publisher'
+  render(
+    <AuthContext.Provider value={{ isRestoring: false, token: 'token', user: { id: 1, role } }}>
+      <MemoryRouter initialEntries={[path]}><App /></MemoryRouter>
+    </AuthContext.Provider>,
+  )
+
+  expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+})
+
+test('publisher is redirected away from direct page-management routes', async () => {
+  render(
+    <AuthContext.Provider value={{ isRestoring: false, token: 'token', user: { id: 1, role: 'publisher' } }}>
+      <MemoryRouter initialEntries={['/dashboard/pages/new']}><App /></MemoryRouter>
+    </AuthContext.Provider>,
+  )
+
+  expect(await screen.findByRole('heading', { name: 'Stories that keep us connected.' })).toBeInTheDocument()
+})
