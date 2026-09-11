@@ -5,8 +5,9 @@ from flask_jwt_extended import get_current_user
 from sqlalchemy import and_, or_
 
 from backend.extensions import db
-from backend.models import Announcement, AnnouncementStatus, UserRole
+from backend.models import Announcement, AnnouncementBodyBlock, AnnouncementStatus, UserRole
 from backend.utils.auth_helpers import role_required
+from backend.utils.body_blocks import parse_body_input, replace_blocks, serialize_blocks
 from backend.utils.content import (
     can_manage_draft,
     iso,
@@ -25,6 +26,7 @@ def _serialize(item):
         "id": item.id,
         "title": item.title,
         "body": item.body,
+        "body_blocks": serialize_blocks(item),
         "status": item.status.value,
         "author_id": item.author_id,
         "created_at": iso(item.created_at),
@@ -70,7 +72,7 @@ def _payload(payload, partial=False):
     if not isinstance(payload, dict):
         raise ValueError
     changes = {}
-    for name, maximum in (("title", 255), ("body", None)):
+    for name, maximum in (("title", 255),):
         if name not in payload:
             if not partial:
                 raise ValueError
@@ -91,16 +93,18 @@ def create_announcement():
     if not is_admin(user) and isinstance(payload, dict) and payload.get("status", "draft") != "draft":
         return jsonify(error="Insufficient permissions"), 403
     try:
+        body, blocks = parse_body_input(payload)
         changes = _payload(payload)
         status = AnnouncementStatus(payload.get("status", "draft")) if is_admin(user) else AnnouncementStatus.DRAFT
     except (ValueError, TypeError):
         return jsonify(error="Invalid content data"), 400
     item = Announcement(
-        **changes,
+        **changes, body=body,
         author_id=user.id,
         status=status,
         published_at=published_at_for(status),
     )
+    replace_blocks(item, blocks, AnnouncementBodyBlock)
     db.session.add(item)
     db.session.commit()
     return jsonify(item=_serialize(item)), 201
@@ -117,6 +121,7 @@ def update_announcement(item_id):
         return jsonify(error="Insufficient permissions"), 403
     payload = request.get_json(silent=True)
     try:
+        body, blocks = parse_body_input(payload, partial=True)
         changes = _payload(payload, partial=True)
         status = AnnouncementStatus(payload.get("status", item.status.value))
     except (ValueError, TypeError, AttributeError):
@@ -126,8 +131,12 @@ def update_announcement(item_id):
         AnnouncementStatus.PENDING_REVIEW,
     }:
         return jsonify(error="Insufficient permissions"), 403
+    if body is not None:
+        changes["body"] = body
     for name, value in changes.items():
         setattr(item, name, value)
+    if blocks is not None:
+        replace_blocks(item, blocks, AnnouncementBodyBlock)
     item.status = status
     item.published_at = published_at_for(status, item.published_at)
     db.session.commit()

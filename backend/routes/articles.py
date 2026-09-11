@@ -4,8 +4,9 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from backend.extensions import db
-from backend.models import Article, ArticleStatus, Category, Media, Tag, UserRole
+from backend.models import Article, ArticleBodyBlock, ArticleStatus, Category, Media, Tag, UserRole
 from backend.utils.auth_helpers import role_required
+from backend.utils.body_blocks import parse_body_input, replace_blocks, serialize_blocks
 from backend.utils.content import (
     can_manage_draft,
     iso,
@@ -26,6 +27,7 @@ def _serialize(article):
         "title": article.title,
         "slug": article.slug,
         "body": article.body,
+        "body_blocks": serialize_blocks(article),
         "status": article.status.value,
         "author_id": article.author_id,
         "category_id": article.category_id,
@@ -48,7 +50,7 @@ def _invalid():
 
 def _load_relations(payload, partial=False):
     changes = {}
-    for name, maximum in (("title", 255), ("slug", 255), ("body", None)):
+    for name, maximum in (("title", 255), ("slug", 255)):
         if name not in payload:
             if not partial:
                 raise ValueError
@@ -156,6 +158,7 @@ def create_article():
     if not is_admin(user) and payload.get("status", "draft") != "draft":
         return jsonify(error="Insufficient permissions"), 403
     try:
+        body, blocks = parse_body_input(payload)
         changes = _load_relations(payload)
         status = (
             ArticleStatus(payload.get("status", "draft"))
@@ -165,8 +168,9 @@ def create_article():
     except (ValueError, TypeError):
         return _invalid()
     tags = changes.pop("tags", [])
-    article = Article(**changes, author_id=user.id, status=status)
+    article = Article(**changes, body=body, author_id=user.id, status=status)
     article.tags = tags
+    replace_blocks(article, blocks, ArticleBodyBlock)
     article.published_at = published_at_for(status)
     db.session.add(article)
     try:
@@ -190,6 +194,7 @@ def update_article(article_id):
     if not isinstance(payload, dict) or not payload:
         return _invalid()
     try:
+        body, blocks = parse_body_input(payload, partial=True)
         changes = _load_relations(payload, partial=True)
         status = ArticleStatus(payload.get("status", article.status.value))
     except (ValueError, TypeError):
@@ -197,10 +202,14 @@ def update_article(article_id):
     if not is_admin(user) and status not in {ArticleStatus.DRAFT, ArticleStatus.PENDING_REVIEW}:
         return jsonify(error="Insufficient permissions"), 403
     tags = changes.pop("tags", None)
+    if body is not None:
+        changes["body"] = body
     for name, value in changes.items():
         setattr(article, name, value)
     if tags is not None:
         article.tags = tags
+    if blocks is not None:
+        replace_blocks(article, blocks, ArticleBodyBlock)
     article.status = status
     article.published_at = published_at_for(status, article.published_at)
     try:

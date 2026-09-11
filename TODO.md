@@ -8,6 +8,8 @@ Milestone 5—the editorial public homepage and published article, announcement,
 
 The reusable frontend foundation is the prerequisite for Milestone 6. It establishes the shared layouts, navigation, controls, theme tokens, and homepage composition conventions that the dashboard and publisher-picture work will use.
 
+Milestone 6 has begun with ordered text-and-picture content blocks and a compatibility migration. Publisher media permissions, private image delivery, dashboard workflows, public picture rendering, and final acceptance remain.
+
 ## Frontend stabilization gate
 
 - [x] Restore the normal Vite development command and restart the frontend.

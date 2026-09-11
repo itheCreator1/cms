@@ -43,3 +43,6 @@ class Page(db.Model):
     )
 
     author = db.relationship("User", back_populates="pages")
+    body_blocks = db.relationship(
+        "PageBodyBlock", order_by="PageBodyBlock.position", cascade="all, delete-orphan"
+    )

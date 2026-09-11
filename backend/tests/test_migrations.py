@@ -124,6 +124,7 @@ def test_first_revision_round_trips_the_postgresql_domain_schema(postgres_app):
             assert _enum_names(connection) == set()
     finally:
         db.session.remove()
+        downgrade(directory="migrations", revision="base")
         upgrade(directory="migrations")
 
     assert expected_tables <= set(inspect(db.engine).get_table_names())
@@ -197,4 +198,60 @@ def test_media_asset_revision_preserves_existing_rows_and_downgrades(postgres_ap
             assert connection.execute(text("SELECT count(*) FROM media")).scalar_one() == 2
     finally:
         db.session.remove()
+        downgrade(directory="migrations", revision="base")
+        upgrade(directory="migrations")
+
+
+def test_body_block_revision_backfills_existing_content_and_downgrades(postgres_app):
+    from flask_migrate import downgrade, upgrade
+
+    from backend.extensions import db
+
+    block_tables = {"article_body_blocks", "announcement_body_blocks", "page_body_blocks"}
+    try:
+        downgrade(directory="migrations", revision="91c4d2e7f8a0")
+        with db.engine.begin() as connection:
+            user_id = connection.execute(
+                text(
+                    "INSERT INTO users (email, password_hash, role) "
+                    "VALUES ('blocks@example.test', 'hash', 'admin') RETURNING id"
+                )
+            ).scalar_one()
+            category_id = connection.execute(
+                text("INSERT INTO categories (name, slug) VALUES ('News', 'news') RETURNING id")
+            ).scalar_one()
+            connection.execute(
+                text(
+                    "INSERT INTO articles (title, slug, body, author_id, category_id, status) "
+                    "VALUES ('Story', 'story', 'Legacy article', :user_id, :category_id, 'draft')"
+                ),
+                {"user_id": user_id, "category_id": category_id},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO announcements (title, body, author_id, status) "
+                    "VALUES ('Notice', 'Legacy announcement', :user_id, 'draft')"
+                ),
+                {"user_id": user_id},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO pages (title, slug, body, author_id, status) "
+                    "VALUES ('About', 'about', 'Legacy page', :user_id, 'draft')"
+                ),
+                {"user_id": user_id},
+            )
+
+        upgrade(directory="migrations")
+        with db.engine.connect() as connection:
+            assert set(inspect(db.engine).get_table_names()) >= block_tables
+            assert connection.execute(text("SELECT text FROM article_body_blocks")).scalar_one() == "Legacy article"
+            assert connection.execute(text("SELECT text FROM announcement_body_blocks")).scalar_one() == "Legacy announcement"
+            assert connection.execute(text("SELECT text FROM page_body_blocks")).scalar_one() == "Legacy page"
+
+        downgrade(directory="migrations", revision="91c4d2e7f8a0")
+        assert block_tables.isdisjoint(inspect(db.engine).get_table_names())
+    finally:
+        db.session.remove()
+        downgrade(directory="migrations", revision="base")
         upgrade(directory="migrations")

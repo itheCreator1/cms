@@ -171,6 +171,70 @@ def test_publisher_creates_and_submits_own_article_with_server_owned_fields(app,
     assert client.delete(f"/api/articles/{item['id']}", headers=headers).status_code == 403
 
 
+def test_article_body_blocks_are_returned_in_order_and_project_to_plain_text(app, client):
+    publisher_id = create_user(app, "blocks@example.test", "publisher")
+    category_id, _, media_id = seed_relations(app, publisher_id)
+
+    payload = article_payload(category_id)
+    payload.pop("body")
+    payload["body_blocks"] = [
+        {"type": "text", "text": "Opening paragraph"},
+        {"type": "image", "media_id": media_id},
+        {"type": "text", "text": "Closing paragraph"},
+    ]
+    response = client.post(
+        "/api/articles",
+        headers=bearer(app, publisher_id, "publisher"),
+        json=payload,
+    )
+
+    assert response.status_code == 201
+    assert response.json["item"]["body"] == "Opening paragraph\n\nClosing paragraph"
+    blocks = response.json["item"]["body_blocks"]
+    assert [
+        {key: value for key, value in block.items() if key != "media"}
+        for block in blocks
+    ] == [
+        {"type": "text", "text": "Opening paragraph"},
+        {"type": "image", "media_id": media_id},
+        {"type": "text", "text": "Closing paragraph"},
+    ]
+    assert blocks[1]["media"]["id"] == media_id
+
+
+def test_content_rejects_body_and_body_blocks_together(app, client):
+    publisher_id = create_user(app, "ambiguous@example.test", "publisher")
+    category_id, _, _ = seed_relations(app, publisher_id)
+
+    response = client.post(
+        "/api/articles",
+        headers=bearer(app, publisher_id, "publisher"),
+        json=article_payload(
+            category_id,
+            body_blocks=[{"type": "text", "text": "A different body"}],
+        ),
+    )
+
+    assert response.status_code == 400
+    assert response.json == {"error": "Invalid content data"}
+
+
+def test_body_only_article_write_remains_a_single_text_block(app, client):
+    publisher_id = create_user(app, "legacy-body@example.test", "publisher")
+    category_id, _, _ = seed_relations(app, publisher_id)
+
+    response = client.post(
+        "/api/articles",
+        headers=bearer(app, publisher_id, "publisher"),
+        json=article_payload(category_id, body="Legacy client body"),
+    )
+
+    assert response.status_code == 201
+    assert response.json["item"]["body_blocks"] == [
+        {"type": "text", "text": "Legacy client body"}
+    ]
+
+
 def test_publisher_cannot_mutate_foreign_article_or_publish_content(app, client):
     owner_id = create_user(app, "owner@example.test", "publisher")
     other_id = create_user(app, "other@example.test", "publisher")

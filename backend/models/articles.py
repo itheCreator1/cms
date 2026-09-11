@@ -78,3 +78,6 @@ class Article(db.Model):
     category = db.relationship("Category", back_populates="articles")
     featured_image = db.relationship("Media", back_populates="featured_articles")
     tags = db.relationship("Tag", secondary=article_tags, back_populates="articles")
+    body_blocks = db.relationship(
+        "ArticleBodyBlock", order_by="ArticleBodyBlock.position", cascade="all, delete-orphan"
+    )

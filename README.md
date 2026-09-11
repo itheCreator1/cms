@@ -108,6 +108,8 @@ Publishers can create and manage only their own draft articles and announcements
 
 Article requests require an existing `category_id`. Optional `tag_ids` values must reference existing tags. A `featured_image_id` must reference an uploaded image; article responses retain that ID and include a nested `featured_image` object when present.
 
+Content requests may send either a plain-text `body` or an ordered `body_blocks` array. Text blocks use `{"type":"text","text":"..."}` and image blocks use `{"type":"image","media_id":123}`. Responses include both the plain-text `body` projection and `body_blocks`; image blocks include resolved media metadata. Sending both fields is rejected, while a body-only write remains compatible and becomes one text block.
+
 ## Public frontend
 
 The public React routes are available without login:
@@ -141,7 +143,7 @@ User management uses `GET/POST /api/users` and `GET/PUT/DELETE /api/users/<id>`.
 
 ## Database migrations
 
-The tracked Alembic history contains the initial CMS domain schema, the announcement-review status revision, and the source-aware media asset revision.
+The tracked Alembic history contains the initial CMS domain schema, the announcement-review status revision, the source-aware media asset revision, and the ordered content-block backfill revision.
 
 Apply revisions and inspect migration state:
 

@@ -38,3 +38,6 @@ class Announcement(db.Model):
     expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     author = db.relationship("User", back_populates="announcements")
+    body_blocks = db.relationship(
+        "AnnouncementBodyBlock", order_by="AnnouncementBodyBlock.position", cascade="all, delete-orphan"
+    )

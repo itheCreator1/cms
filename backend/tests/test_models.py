@@ -195,9 +195,9 @@ def test_domain_model_metadata_matches_the_cms_contract():
 
     expected_relationships = {
         models.User: {"articles", "announcements", "pages", "media"},
-        models.Article: {"author", "category", "featured_image", "tags"},
-        models.Announcement: {"author"},
-        models.Page: {"author"},
+        models.Article: {"author", "category", "featured_image", "tags", "body_blocks"},
+        models.Announcement: {"author", "body_blocks"},
+        models.Page: {"author", "body_blocks"},
         models.Category: {"articles"},
         models.Tag: {"articles"},
         models.Media: {"uploader", "featured_articles"},
@@ -206,8 +206,11 @@ def test_domain_model_metadata_matches_the_cms_contract():
         assert set(inspect(model).relationships.keys()) == names
         for relationship_name in names:
             cascade = _relationship(model, relationship_name).cascade
-            assert "delete" not in cascade
-            assert "delete-orphan" not in cascade
+            if relationship_name == "body_blocks":
+                assert {"delete", "delete-orphan"} <= set(cascade)
+            else:
+                assert "delete" not in cascade
+                assert "delete-orphan" not in cascade
 
 
 def test_user_hashes_passwords_and_checks_credentials_without_storing_plaintext():

@@ -3,8 +3,9 @@ from flask_jwt_extended import get_current_user
 from sqlalchemy.exc import IntegrityError
 
 from backend.extensions import db
-from backend.models import Page, PageStatus
+from backend.models import Page, PageBodyBlock, PageStatus
 from backend.utils.auth_helpers import role_required
+from backend.utils.body_blocks import parse_body_input, replace_blocks, serialize_blocks
 from backend.utils.content import iso, is_admin, optional_user, valid_slug, valid_text
 
 blueprint = Blueprint("pages", __name__, url_prefix="/api/pages")
@@ -16,6 +17,7 @@ def _serialize(item):
         "title": item.title,
         "slug": item.slug,
         "body": item.body,
+        "body_blocks": serialize_blocks(item),
         "status": item.status.value,
         "author_id": item.author_id,
         "updated_at": iso(item.updated_at),
@@ -59,7 +61,7 @@ def _payload(payload, partial=False):
     if not isinstance(payload, dict):
         raise ValueError
     changes = {}
-    for name, maximum in (("title", 255), ("slug", 255), ("body", None)):
+    for name, maximum in (("title", 255), ("slug", 255)):
         if name not in payload:
             if not partial:
                 raise ValueError
@@ -78,11 +80,13 @@ def _payload(payload, partial=False):
 def create_page():
     payload = request.get_json(silent=True)
     try:
+        body, blocks = parse_body_input(payload)
         changes = _payload(payload)
         status = PageStatus(payload.get("status", "draft"))
     except (ValueError, TypeError):
         return jsonify(error="Invalid content data"), 400
-    item = Page(**changes, status=status, author_id=get_current_user().id)
+    item = Page(**changes, body=body, status=status, author_id=get_current_user().id)
+    replace_blocks(item, blocks, PageBodyBlock)
     db.session.add(item)
     try:
         db.session.commit()
@@ -100,12 +104,17 @@ def update_page(item_id):
         return jsonify(error="Not found"), 404
     payload = request.get_json(silent=True)
     try:
+        body, blocks = parse_body_input(payload, partial=True)
         changes = _payload(payload, partial=True)
         status = PageStatus(payload.get("status", item.status.value))
     except (ValueError, TypeError, AttributeError):
         return jsonify(error="Invalid content data"), 400
+    if body is not None:
+        changes["body"] = body
     for name, value in changes.items():
         setattr(item, name, value)
+    if blocks is not None:
+        replace_blocks(item, blocks, PageBodyBlock)
     item.status = status
     try:
         db.session.commit()
