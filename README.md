@@ -164,7 +164,7 @@ Review the generated revision before applying it. `flask db init` is a one-time 
 ## Project layout
 
 - `backend/`: Flask application factory, feature Blueprints, domain models, authentication/authorization helpers, media storage adapter, seed command, and pytest suite
-- `frontend/`: Vite/React application, public reading experience, router, persistent auth context, shared API client, login screens, and Vitest suite
+- `frontend/`: Vite/React application, public reading experience, article-authoring dashboard routes, router, persistent auth context, shared API client, login screens, and Vitest suite
 - `migrations/`: tracked Flask-Migrate/Alembic environment
 - `compose.yaml`: canonical development runtime with persistent PostgreSQL, uploaded-media, and frontend-dependency volumes
 

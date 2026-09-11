@@ -6,6 +6,8 @@ import PublicLayout from './layouts/PublicLayout'
 import Login from './pages/auth/Login'
 import SystemAccess from './pages/auth/SystemAccess'
 import DashboardHome from './pages/dashboard/DashboardHome'
+import ArticleEditor from './pages/dashboard/ArticleEditor'
+import ArticleList from './pages/dashboard/ArticleList'
 import AnnouncementsPage from './pages/public/AnnouncementsPage'
 import ArticlePage from './pages/public/ArticlePage'
 import Home from './pages/public/Home'
@@ -27,7 +29,11 @@ export default function App() {
       </Route>
       <Route element={<ProtectedRoute minimumRole="publisher" />}>
         <Route element={<DashboardLayout />}>
-          <Route path="dashboard/*" element={<DashboardHome />} />
+          <Route path="dashboard" element={<DashboardHome />} />
+          <Route path="dashboard/articles" element={<ArticleList />} />
+          <Route path="dashboard/articles/new" element={<ArticleEditor />} />
+          <Route path="dashboard/articles/:id/edit" element={<ArticleEditor />} />
+          <Route path="dashboard/*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>
       <Route>
