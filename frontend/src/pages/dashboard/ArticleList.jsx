@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/ContentState'
 import { useAuth } from '../../context/AuthContext'
@@ -9,18 +10,23 @@ import typography from '../../components/ui/Typography.module.css'
 export default function ArticleList() {
   const { user } = useAuth()
   const articles = useAsyncResource(articleService.list)
+  const [status, setStatus] = useState('')
 
   if (articles.status === 'loading') return <LoadingState message="Loading articles…" />
   if (articles.status === 'error') return <ErrorState message="Articles are unavailable." onRetry={articles.retry} />
-  const items = user.role === 'publisher'
+  const roleScopedItems = user.role === 'publisher'
     ? articles.data.filter((article) => article.author_id === user.id)
     : articles.data
+  const items = status
+    ? roleScopedItems.filter((article) => article.status === status)
+    : roleScopedItems
 
   return (
     <section>
       <p className={typography.eyebrow}>Content</p>
       <h1 className={typography.pageTitle}>Articles</h1>
       <p><Link to="/dashboard/articles/new">New article</Link></p>
+      <label htmlFor="article-status">Status<select id="article-status" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All statuses</option><option value="draft">Draft</option><option value="pending_review">Pending review</option><option value="published">Published</option></select></label>
       {items.length === 0 ? <EmptyState message="No articles yet." /> : (
         <ul>
           {items.map((article) => (
