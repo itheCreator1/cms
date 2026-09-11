@@ -4,6 +4,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import ArticleEditor from './ArticleEditor'
 import { articleService } from '../../services/articles'
 import * as categories from '../../services/categories'
+import * as media from '../../services/media'
 import { AuthContext } from '../../context/AuthContext'
 
 vi.mock('../../services/articles', () => ({ articleService: { get: vi.fn(), create: vi.fn(), update: vi.fn() } }))
@@ -62,4 +63,22 @@ test('publisher cannot open another author’s article from a dashboard route', 
 
   expect(await screen.findByRole('alert')).toHaveTextContent('This article is unavailable.')
   expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
+})
+
+test('editor adds an uploaded picture as an ordered body block', async () => {
+  const item = { id: 1, title: 'Draft story', slug: 'draft-story', category_id: 1, status: 'draft', body: 'Text', body_blocks: [{ type: 'text', text: 'Text' }] }
+  vi.spyOn(articleService, 'get').mockResolvedValue(item)
+  vi.spyOn(categories, 'listCategories').mockResolvedValue([{ id: 1, name: 'News' }])
+  vi.spyOn(media, 'listMedia').mockResolvedValue([])
+  vi.spyOn(media, 'uploadImage').mockResolvedValue({ id: 8, url: '/api/media/files/garden.webp', alt_text: 'Garden' })
+
+  openEditor()
+  fireEvent.click(await screen.findByRole('button', { name: 'Add picture' }))
+  fireEvent.change(screen.getByLabelText('Upload picture'), { target: { files: [new File(['image'], 'garden.webp', { type: 'image/webp' })] } })
+
+  expect(await screen.findByText('Attached picture Garden')).toBeInTheDocument()
+  fireEvent.submit(screen.getByLabelText('Title').closest('form'))
+  await waitFor(() => expect(articleService.update).toHaveBeenCalledWith('1', expect.objectContaining({
+    body_blocks: [{ type: 'text', text: 'Text' }, { type: 'image', media_id: 8 }],
+  })))
 })

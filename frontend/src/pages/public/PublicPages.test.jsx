@@ -144,6 +144,25 @@ test('article route renders stored markup as text instead of executable HTML', a
   expect(screen.getByText('Community')).toBeInTheDocument()
 })
 
+test('article route renders resolved picture blocks in their stored position', async () => {
+  const picturedArticle = { ...leadArticle, body_blocks: [
+    { type: 'text', text: 'Opening paragraph.' },
+    { type: 'image', media_id: 8, media: { url: '/api/media/files/inline.webp', alt_text: 'Volunteer planting' } },
+    { type: 'text', text: 'Closing paragraph.' },
+  ] }
+  vi.stubGlobal('fetch', vi.fn(async (url) => {
+    if (url.includes('/articles/slug/')) return response({ item: picturedArticle })
+    if (url.endsWith('/categories')) return response({ items: [] })
+    throw new Error(`Unexpected URL: ${url}`)
+  }))
+
+  renderAt('/articles/city-garden')
+
+  expect(await screen.findByText('Opening paragraph.')).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Volunteer planting' })).toHaveAttribute('src', 'http://localhost:5000/api/media/files/inline.webp')
+  expect(screen.getByText('Closing paragraph.')).toBeInTheDocument()
+})
+
 test('article route renders an in-page not-found state', async () => {
   vi.stubGlobal('fetch', vi.fn(async (url) => {
     if (url.includes('/articles/slug/')) return response({ error: 'Not found' }, 404)

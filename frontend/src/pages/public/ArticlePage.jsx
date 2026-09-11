@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-import PlainTextBody from '../../components/content/PlainTextBody'
+import BodyBlocks from '../../components/content/BodyBlocks'
 import PublishedDate from '../../components/content/PublishedDate'
 import { ErrorState, LoadingState } from '../../components/ui/ContentState'
 import { useAsyncResource } from '../../hooks/useAsyncResource'
@@ -43,7 +43,7 @@ export default function ArticlePage() {
         <PublishedDate value={item.published_at || item.created_at} />
       </header>
       {image && <img className={styles.storyImage} src={resolveApiUrl(image.url)} alt={image.alt_text || ''} />}
-      <PlainTextBody body={item.body} />
+      <BodyBlocks blocks={item.body_blocks} body={item.body} />
     </article>
   )
 }
