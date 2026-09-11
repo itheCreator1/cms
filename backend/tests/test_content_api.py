@@ -249,6 +249,45 @@ def test_publisher_cannot_mutate_foreign_article_or_publish_content(app, client)
     assert client.put(f"/api/articles/{article['id']}", headers=bearer(app, owner_id, "publisher"), json={"status": "published"}).status_code == 403
 
 
+def test_publisher_cannot_attach_another_publishers_images(app, client):
+    from backend.extensions import db
+    from backend.models import Media
+
+    owner_id = create_user(app, "image-owner@example.test", "publisher")
+    other_id = create_user(app, "image-other@example.test", "publisher")
+    category_id, _, _ = seed_relations(app, owner_id)
+    with app.app_context():
+        foreign_image = Media(
+            filename="foreign.jpg",
+            url="/uploads/foreign.jpg",
+            uploaded_by=other_id,
+            file_type="image/jpeg",
+        )
+        db.session.add(foreign_image)
+        db.session.commit()
+        foreign_image_id = foreign_image.id
+
+    featured = client.post(
+        "/api/articles",
+        headers=bearer(app, owner_id, "publisher"),
+        json=article_payload(category_id, featured_image_id=foreign_image_id),
+    )
+    inline_payload = article_payload(category_id, slug="foreign-inline")
+    inline_payload.pop("body")
+    inline_payload["body_blocks"] = [
+        {"type": "text", "text": "Body"},
+        {"type": "image", "media_id": foreign_image_id},
+    ]
+    inline = client.post(
+        "/api/articles",
+        headers=bearer(app, owner_id, "publisher"),
+        json=inline_payload,
+    )
+
+    assert featured.status_code == 400
+    assert inline.status_code == 400
+
+
 def test_admin_manages_any_article_and_controls_publication_timestamps(app, client):
     publisher_id = create_user(app, "publisher@example.test", "publisher")
     admin_id = create_user(app, "admin@example.test", "admin")

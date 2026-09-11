@@ -9,6 +9,7 @@ from backend.utils.auth_helpers import role_required
 from backend.utils.body_blocks import parse_body_input, replace_blocks, serialize_blocks
 from backend.utils.content import (
     can_manage_draft,
+    can_attach_media,
     iso,
     is_admin,
     optional_user,
@@ -48,7 +49,7 @@ def _invalid():
     return jsonify(error="Invalid content data"), 400
 
 
-def _load_relations(payload, partial=False):
+def _load_relations(payload, partial=False, may_attach_media=None):
     changes = {}
     for name, maximum in (("title", 255), ("slug", 255)):
         if name not in payload:
@@ -82,6 +83,7 @@ def _load_relations(payload, partial=False):
             or (media := db.session.get(Media, media_id)) is None
             or media.source_type != "upload"
             or media.media_type != "image"
+            or (may_attach_media is not None and not may_attach_media(media))
         ):
             raise ValueError
         changes["featured_image_id"] = media_id
@@ -158,8 +160,9 @@ def create_article():
     if not is_admin(user) and payload.get("status", "draft") != "draft":
         return jsonify(error="Insufficient permissions"), 403
     try:
-        body, blocks = parse_body_input(payload)
-        changes = _load_relations(payload)
+        may_attach_media = lambda media: can_attach_media(user, media)
+        body, blocks = parse_body_input(payload, may_attach_media=may_attach_media)
+        changes = _load_relations(payload, may_attach_media=may_attach_media)
         status = (
             ArticleStatus(payload.get("status", "draft"))
             if is_admin(user)
@@ -194,8 +197,12 @@ def update_article(article_id):
     if not isinstance(payload, dict) or not payload:
         return _invalid()
     try:
-        body, blocks = parse_body_input(payload, partial=True)
-        changes = _load_relations(payload, partial=True)
+        retained_media_ids = {block.media_id for block in article.body_blocks if block.media_id is not None}
+        if article.featured_image_id is not None:
+            retained_media_ids.add(article.featured_image_id)
+        may_attach_media = lambda media: can_attach_media(user, media, retained_media_ids)
+        body, blocks = parse_body_input(payload, partial=True, may_attach_media=may_attach_media)
+        changes = _load_relations(payload, partial=True, may_attach_media=may_attach_media)
         status = ArticleStatus(payload.get("status", article.status.value))
     except (ValueError, TypeError):
         return _invalid()

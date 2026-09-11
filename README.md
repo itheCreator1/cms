@@ -130,12 +130,12 @@ Category and tag collections are public so published content can resolve its tax
 - `GET/POST /api/categories` and `GET/PUT/DELETE /api/categories/<id>`
 - `GET/POST /api/tags` and `GET/PUT/DELETE /api/tags/<id>`
 
-Media management requires Admin or Superadmin access:
+Publishers may upload and list only their own images. Admins and Superadmins can list all media and retain global editing, deletion, and external-link creation:
 
 - `GET /api/media` and `GET/PUT/DELETE /api/media/<id>`
 - `POST /api/media/uploads` accepts a multipart `file` plus optional `alt_text`.
 - `POST /api/media/links` accepts an HTTPS `url` plus optional `alt_text`.
-- `GET /api/media/files/<storage-key>` publicly serves an uploaded image.
+- `GET /api/media/files/<storage-key>` serves an uploaded image to its owner or an Admin; it becomes public only while referenced by published content and is rechecked after unpublishing.
 
 Uploads accept JPEG, PNG, WebP, and non-animated GIF images. They are limited by `MEDIA_MAX_BYTES` and `MEDIA_MAX_PIXELS`, decoded and re-encoded, stripped of metadata, and stored under generated names in the persistent `media_uploads` volume. SVG is not accepted. External links are normalized and classified as YouTube, Facebook, Instagram, or generic without fetching the remote URL or accepting embed HTML.
 

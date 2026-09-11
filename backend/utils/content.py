@@ -30,6 +30,10 @@ def can_manage_draft(user, item):
     )
 
 
+def can_attach_media(user, media, retained_media_ids=()):
+    return is_admin(user) or media.uploaded_by == user.id or media.id in retained_media_ids
+
+
 def valid_text(value, maximum=None):
     return (
         isinstance(value, str)

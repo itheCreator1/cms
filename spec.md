@@ -94,7 +94,7 @@ Milestone 1 is complete only when all of the following have been verified from a
 | Role | Permissions |
 |---|---|
 | **Visitor** (unauthenticated) | View published articles, announcements, and pages only |
-| **Publisher** | + Create, edit, and delete their OWN articles and announcements (as drafts); submit drafts for review |
+| **Publisher** | + Create, edit, and delete their OWN articles and announcements (as drafts); submit drafts for review; upload and reuse only their own images |
 | **Admin** | + Publish/unpublish any content; edit/delete any user's content; manage categories and tags; manage media library; create/manage Publisher accounts |
 | **Superadmin** | + Manage Admin accounts; full user management (create/edit/delete any user, any role); manage site-wide settings; delete any content unconditionally |
 
@@ -112,7 +112,7 @@ Design and implement database models for:
 - **Page** — id, title, slug, body, status (draft/published), author_id (FK to User), updated_at (for static pages like About/Contact)
 - **Category** — id, name, slug
 - **Tag** — id, name, slug (many-to-many with Article)
-- **Media** — id, filename, url, uploaded_by (FK to User), uploaded_at, file_type, source_type, media_type, provider, storage_key, alt_text. Milestone 4 supports locally stored images and external HTTPS links through the same source-aware record. Provider metadata is descriptive only: the backend does not fetch arbitrary URLs or store raw embed HTML.
+- **Media** — id, filename, url, uploaded_by (FK to User), uploaded_at, file_type, source_type, media_type, provider, storage_key, alt_text. Milestone 4 supports locally stored images and external HTTPS links through the same source-aware record. Provider metadata is descriptive only: the backend does not fetch arbitrary URLs or store raw embed HTML. Publisher uploads are private to their uploader and Admins unless referenced by published content; visibility is rechecked for every file request.
 
 Use an ORM (SQLAlchemy) to define these models and their relationships. Include foreign key constraints and appropriate indexes on slug fields.
 

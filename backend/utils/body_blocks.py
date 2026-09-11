@@ -4,7 +4,7 @@ from backend.utils.content import valid_text
 from backend.utils.media import serialize_media
 
 
-def parse_body_input(payload, partial=False):
+def parse_body_input(payload, partial=False, may_attach_media=None):
     has_body = "body" in payload
     has_blocks = "body_blocks" in payload
     if has_body and has_blocks:
@@ -32,7 +32,12 @@ def parse_body_input(payload, partial=False):
         elif block.get("type") == "image" and set(block) == {"type", "media_id"}:
             media_id = block["media_id"]
             media = db.session.get(Media, media_id) if isinstance(media_id, int) and not isinstance(media_id, bool) else None
-            if media is None or media.source_type != "upload" or media.media_type != "image":
+            if (
+                media is None
+                or media.source_type != "upload"
+                or media.media_type != "image"
+                or (may_attach_media is not None and not may_attach_media(media))
+            ):
                 raise ValueError
             normalized.append(("image", media))
         else:

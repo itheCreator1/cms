@@ -115,8 +115,6 @@ def animated_gif():
 def test_admin_uploads_serves_updates_and_deletes_image(app, client):
     publisher_id = create_user(app, "media-publisher@example.test", "publisher")
     admin_id = create_user(app, "media-admin@example.test", "admin")
-    assert upload(client, bearer(app, publisher_id, "publisher")).status_code == 403
-
     headers = bearer(app, admin_id, "admin")
     created = upload(client, headers)
     assert created.status_code == 201
@@ -142,7 +140,7 @@ def test_admin_uploads_serves_updates_and_deletes_image(app, client):
         "item": item
     }
 
-    served = client.get(item["url"])
+    served = client.get(item["url"], headers=headers)
     assert served.status_code == 200
     assert served.content_type == "image/png"
     assert served.headers["X-Content-Type-Options"] == "nosniff"
@@ -158,6 +156,62 @@ def test_admin_uploads_serves_updates_and_deletes_image(app, client):
 
     assert client.delete(f"/api/media/{item['id']}", headers=headers).status_code == 204
     assert client.get(item["url"]).status_code == 404
+
+
+def test_publisher_uploads_own_images_and_private_files_require_authorization(app, client):
+    publisher_id = create_user(app, "picture-owner@example.test", "publisher")
+    other_publisher_id = create_user(app, "picture-other@example.test", "publisher")
+    admin_id = create_user(app, "picture-admin@example.test", "admin")
+    publisher_headers = bearer(app, publisher_id, "publisher")
+    item = upload(client, publisher_headers).json["item"]
+
+    assert client.get("/api/media", headers=publisher_headers).json["items"] == [item]
+    assert client.get("/api/media", headers=bearer(app, other_publisher_id, "publisher")).json["items"] == []
+    assert client.get(f"/api/media/{item['id']}", headers=bearer(app, other_publisher_id, "publisher")).status_code == 404
+    assert client.get(item["url"]).status_code == 404
+    assert client.get(item["url"], headers=bearer(app, other_publisher_id, "publisher")).status_code == 404
+
+    owner_file = client.get(item["url"], headers=publisher_headers)
+    assert owner_file.status_code == 200
+    assert owner_file.headers["Cache-Control"] == "no-store"
+    assert client.get(item["url"], headers=bearer(app, admin_id, "admin")).status_code == 200
+
+
+def test_published_content_grants_public_image_access_until_unpublished(app, client):
+    from backend.extensions import db
+    from backend.models import Category
+
+    publisher_id = create_user(app, "publication-owner@example.test", "publisher")
+    admin_id = create_user(app, "publication-admin@example.test", "admin")
+    publisher_headers = bearer(app, publisher_id, "publisher")
+    image = upload(client, publisher_headers).json["item"]
+    with app.app_context():
+        category = Category(name="Publication", slug="publication")
+        db.session.add(category)
+        db.session.commit()
+        category_id = category.id
+
+    article = client.post(
+        "/api/articles",
+        headers=publisher_headers,
+        json={
+            "title": "Published picture",
+            "slug": "published-picture",
+            "body": "Story body",
+            "category_id": category_id,
+            "featured_image_id": image["id"],
+        },
+    ).json["item"]
+    admin_headers = bearer(app, admin_id, "admin")
+    assert client.put(
+        f"/api/articles/{article['id']}", headers=admin_headers, json={"status": "published"}
+    ).status_code == 200
+    assert client.get(image["url"]).status_code == 200
+
+    assert client.put(
+        f"/api/articles/{article['id']}", headers=admin_headers, json={"status": "draft"}
+    ).status_code == 200
+    assert client.get(image["url"]).status_code == 404
 
 
 def test_upload_rejects_untrusted_or_oversized_images(app, client):

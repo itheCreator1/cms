@@ -10,6 +10,7 @@ from backend.utils.auth_helpers import role_required
 from backend.utils.body_blocks import parse_body_input, replace_blocks, serialize_blocks
 from backend.utils.content import (
     can_manage_draft,
+    can_attach_media,
     iso,
     is_admin,
     optional_user,
@@ -93,7 +94,9 @@ def create_announcement():
     if not is_admin(user) and isinstance(payload, dict) and payload.get("status", "draft") != "draft":
         return jsonify(error="Insufficient permissions"), 403
     try:
-        body, blocks = parse_body_input(payload)
+        body, blocks = parse_body_input(
+            payload, may_attach_media=lambda media: can_attach_media(user, media)
+        )
         changes = _payload(payload)
         status = AnnouncementStatus(payload.get("status", "draft")) if is_admin(user) else AnnouncementStatus.DRAFT
     except (ValueError, TypeError):
@@ -121,7 +124,12 @@ def update_announcement(item_id):
         return jsonify(error="Insufficient permissions"), 403
     payload = request.get_json(silent=True)
     try:
-        body, blocks = parse_body_input(payload, partial=True)
+        retained_media_ids = {block.media_id for block in item.body_blocks if block.media_id is not None}
+        body, blocks = parse_body_input(
+            payload,
+            partial=True,
+            may_attach_media=lambda media: can_attach_media(user, media, retained_media_ids),
+        )
         changes = _payload(payload, partial=True)
         status = AnnouncementStatus(payload.get("status", item.status.value))
     except (ValueError, TypeError, AttributeError):

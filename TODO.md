@@ -31,6 +31,8 @@ Milestone 6 has begun with ordered text-and-picture content blocks and a compati
 - [x] Restrict unauthenticated article, announcement, and page responses to published records.
 - [x] Add request validation, consistent JSON errors, and appropriate HTTP status codes for the authentication foundation.
 - [x] Implement media uploads, local file storage, and returned media URLs.
+- [x] Add ordered content blocks with a compatibility migration for existing plain-text bodies.
+- [x] Allow Publisher image uploads with ownership checks and publication-aware private file delivery.
 - [x] Add a seed command that creates a Superadmin and sample categories using credentials from environment variables.
 - [x] Add the seed and JWT variables to `.env.example` without committing credentials.
 

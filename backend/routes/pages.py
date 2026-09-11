@@ -6,7 +6,7 @@ from backend.extensions import db
 from backend.models import Page, PageBodyBlock, PageStatus
 from backend.utils.auth_helpers import role_required
 from backend.utils.body_blocks import parse_body_input, replace_blocks, serialize_blocks
-from backend.utils.content import iso, is_admin, optional_user, valid_slug, valid_text
+from backend.utils.content import can_attach_media, iso, is_admin, optional_user, valid_slug, valid_text
 
 blueprint = Blueprint("pages", __name__, url_prefix="/api/pages")
 
@@ -80,7 +80,9 @@ def _payload(payload, partial=False):
 def create_page():
     payload = request.get_json(silent=True)
     try:
-        body, blocks = parse_body_input(payload)
+        body, blocks = parse_body_input(
+            payload, may_attach_media=lambda media: can_attach_media(get_current_user(), media)
+        )
         changes = _payload(payload)
         status = PageStatus(payload.get("status", "draft"))
     except (ValueError, TypeError):
@@ -104,7 +106,12 @@ def update_page(item_id):
         return jsonify(error="Not found"), 404
     payload = request.get_json(silent=True)
     try:
-        body, blocks = parse_body_input(payload, partial=True)
+        retained_media_ids = {block.media_id for block in item.body_blocks if block.media_id is not None}
+        body, blocks = parse_body_input(
+            payload,
+            partial=True,
+            may_attach_media=lambda media: can_attach_media(get_current_user(), media, retained_media_ids),
+        )
         changes = _payload(payload, partial=True)
         status = PageStatus(payload.get("status", item.status.value))
     except (ValueError, TypeError, AttributeError):

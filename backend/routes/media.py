@@ -5,9 +5,21 @@ from flask_jwt_extended import get_current_user
 from sqlalchemy.exc import IntegrityError
 
 from backend.extensions import db
-from backend.models import Media
+from backend.models import (
+    Announcement,
+    AnnouncementBodyBlock,
+    AnnouncementStatus,
+    Article,
+    ArticleBodyBlock,
+    ArticleStatus,
+    Media,
+    Page,
+    PageBodyBlock,
+    PageStatus,
+)
 from backend.services.media_storage import InvalidMedia, MediaTooLarge
 from backend.utils.auth_helpers import role_required
+from backend.utils.content import is_admin, optional_user
 from backend.utils.media import (
     normalize_alt_text,
     normalize_external_url,
@@ -24,23 +36,27 @@ def _invalid():
 
 
 @blueprint.get("")
-@role_required("admin")
+@role_required("publisher")
 def list_media():
-    items = db.session.scalars(db.select(Media).order_by(Media.id)).all()
+    user = get_current_user()
+    statement = db.select(Media).order_by(Media.id)
+    if not is_admin(user):
+        statement = statement.where(Media.uploaded_by == user.id)
+    items = db.session.scalars(statement).all()
     return jsonify(items=[serialize_media(item) for item in items])
 
 
 @blueprint.get("/<int:media_id>")
-@role_required("admin")
+@role_required("publisher")
 def get_media(media_id):
     item = db.session.get(Media, media_id)
-    if item is None:
+    if item is None or (not is_admin(get_current_user()) and item.uploaded_by != get_current_user().id):
         return jsonify(error="Not found"), 404
     return jsonify(item=serialize_media(item))
 
 
 @blueprint.post("/uploads")
-@role_required("admin")
+@role_required("publisher")
 def create_upload():
     uploaded_file = request.files.get("file")
     if uploaded_file is None:
@@ -157,12 +173,56 @@ def delete_media(media_id):
     return "", 204
 
 
+def _is_publicly_referenced(media_id):
+    article = db.session.scalar(
+        db.select(Article.id)
+        .outerjoin(ArticleBodyBlock)
+        .where(
+            Article.status == ArticleStatus.PUBLISHED,
+            (Article.featured_image_id == media_id) | (ArticleBodyBlock.media_id == media_id),
+        )
+        .limit(1)
+    )
+    if article is not None:
+        return True
+    announcement = db.session.scalar(
+        db.select(Announcement.id)
+        .join(AnnouncementBodyBlock)
+        .where(
+            Announcement.status == AnnouncementStatus.PUBLISHED,
+            (Announcement.expires_at.is_(None)) | (Announcement.expires_at > db.func.now()),
+            AnnouncementBodyBlock.media_id == media_id,
+        )
+        .limit(1)
+    )
+    if announcement is not None:
+        return True
+    return db.session.scalar(
+        db.select(Page.id)
+        .join(PageBodyBlock)
+        .where(Page.status == PageStatus.PUBLISHED, PageBodyBlock.media_id == media_id)
+        .limit(1)
+    ) is not None
+
+
 @blueprint.get("/files/<storage_key>")
 def serve_media(storage_key):
     if not storage_key or "/" in storage_key or "\\" in storage_key:
+        return jsonify(error="Not found"), 404
+    item = db.session.scalar(
+        db.select(Media).where(Media.storage_key == storage_key, Media.source_type == "upload")
+    )
+    if item is None:
+        return jsonify(error="Not found"), 404
+    user = optional_user()
+    if not (
+        (user is not None and (is_admin(user) or item.uploaded_by == user.id))
+        or _is_publicly_referenced(item.id)
+    ):
         return jsonify(error="Not found"), 404
     response = send_from_directory(
         current_app.config["MEDIA_STORAGE_ROOT"], storage_key, conditional=True
     )
     response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "no-store"
     return response
