@@ -234,6 +234,32 @@ def test_repeated_block_replacement_preserves_order(app, client):
         assert [{k: v for k, v in block.items() if k != "media"} for block in response.json["item"]["body_blocks"]] == blocks
 
 
+def test_duplicate_slug_during_block_replacement_returns_conflict_without_changes(app, client):
+    owner = create_user(app, "atomic-replacement@example.test", "publisher")
+    category, _, _ = seed_relations(app, owner)
+    headers = bearer(app, owner, "publisher")
+    original = client.post(
+        "/api/articles", headers=headers, json=article_payload(category, slug="original")
+    ).json["item"]
+    client.post(
+        "/api/articles", headers=headers, json=article_payload(category, slug="taken")
+    )
+
+    response = client.put(
+        f"/api/articles/{original['id']}",
+        headers=headers,
+        json={
+            "slug": "taken",
+            "body_blocks": [{"type": "text", "text": "Replacement text"}],
+        },
+    )
+
+    assert response.status_code == 409
+    stored = client.get(f"/api/articles/{original['id']}", headers=headers).json["item"]
+    assert stored["slug"] == "original"
+    assert stored["body_blocks"] == [{"type": "text", "text": "Complete article body"}]
+
+
 def test_body_only_article_write_remains_a_single_text_block(app, client):
     publisher_id = create_user(app, "legacy-body@example.test", "publisher")
     category_id, _, _ = seed_relations(app, publisher_id)

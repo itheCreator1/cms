@@ -116,14 +116,14 @@ def update_page(item_id):
         status = PageStatus(payload.get("status", item.status.value))
     except (ValueError, TypeError, AttributeError):
         return jsonify(error="Invalid content data"), 400
-    if body is not None:
-        changes["body"] = body
-    for name, value in changes.items():
-        setattr(item, name, value)
-    if blocks is not None:
-        replace_blocks(item, blocks, PageBodyBlock)
-    item.status = status
     try:
+        if body is not None:
+            changes["body"] = body
+        for name, value in changes.items():
+            setattr(item, name, value)
+        if blocks is not None:
+            replace_blocks(item, blocks, PageBodyBlock)
+        item.status = status
         db.session.commit()
     except IntegrityError:
         db.session.rollback()

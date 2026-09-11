@@ -139,15 +139,19 @@ def update_announcement(item_id):
         AnnouncementStatus.PENDING_REVIEW,
     }:
         return jsonify(error="Insufficient permissions"), 403
-    if body is not None:
-        changes["body"] = body
-    for name, value in changes.items():
-        setattr(item, name, value)
-    if blocks is not None:
-        replace_blocks(item, blocks, AnnouncementBodyBlock)
-    item.status = status
-    item.published_at = published_at_for(status, item.published_at)
-    db.session.commit()
+    try:
+        if body is not None:
+            changes["body"] = body
+        for name, value in changes.items():
+            setattr(item, name, value)
+        if blocks is not None:
+            replace_blocks(item, blocks, AnnouncementBodyBlock)
+        item.status = status
+        item.published_at = published_at_for(status, item.published_at)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify(error="Content could not be saved"), 409
     return jsonify(item=_serialize(item))
 
 

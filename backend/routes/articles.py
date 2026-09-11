@@ -209,17 +209,17 @@ def update_article(article_id):
     if not is_admin(user) and status not in {ArticleStatus.DRAFT, ArticleStatus.PENDING_REVIEW}:
         return jsonify(error="Insufficient permissions"), 403
     tags = changes.pop("tags", None)
-    if body is not None:
-        changes["body"] = body
-    for name, value in changes.items():
-        setattr(article, name, value)
-    if tags is not None:
-        article.tags = tags
-    if blocks is not None:
-        replace_blocks(article, blocks, ArticleBodyBlock)
-    article.status = status
-    article.published_at = published_at_for(status, article.published_at)
     try:
+        if body is not None:
+            changes["body"] = body
+        for name, value in changes.items():
+            setattr(article, name, value)
+        if tags is not None:
+            article.tags = tags
+        if blocks is not None:
+            replace_blocks(article, blocks, ArticleBodyBlock)
+        article.status = status
+        article.published_at = published_at_for(status, article.published_at)
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
