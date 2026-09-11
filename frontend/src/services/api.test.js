@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 
-import { apiRequest, resolveApiUrl } from './api'
+import { apiRequest, fetchAuthenticatedBlob, resolveApiUrl } from './api'
 import { getHealth } from './health'
 
 afterEach(() => {
@@ -99,6 +99,30 @@ test('apiRequest omits a stored bearer token for an anonymous request', async ()
 
   expect(fetchMock.mock.calls[0][1].headers.has('Authorization')).toBe(false)
   expect(fetchMock.mock.calls[0][1]).not.toHaveProperty('auth')
+})
+
+test('apiRequest keeps the browser multipart content type boundary', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => ({ item: {} }),
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  await apiRequest('/media/uploads', { method: 'POST', body: new FormData() })
+
+  expect(fetchMock.mock.calls[0][1].headers.has('Content-Type')).toBe(false)
+})
+
+test('fetchAuthenticatedBlob uses the bearer header without exposing it in a URL', async () => {
+  localStorage.setItem('cms_access_token', 'private-token')
+  const blob = new Blob(['image'])
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, blob: async () => blob })
+  vi.stubGlobal('fetch', fetchMock)
+
+  await expect(fetchAuthenticatedBlob('/media/files/private.webp')).resolves.toBe(blob)
+  expect(fetchMock).toHaveBeenCalledWith('http://localhost:5000/api/media/files/private.webp', expect.any(Object))
+  expect(fetchMock.mock.calls[0][1].headers.get('Authorization')).toBe('Bearer private-token')
 })
 
 test.each([

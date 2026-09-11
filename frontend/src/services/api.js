@@ -9,7 +9,7 @@ export async function apiRequest(path, options = {}) {
   if (auth && token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`)
   }
-  if (fetchOptions.body && !headers.has('Content-Type')) {
+  if (fetchOptions.body && !(fetchOptions.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -28,6 +28,22 @@ export async function apiRequest(path, options = {}) {
   }
 
   return data
+}
+
+export async function fetchAuthenticatedBlob(path) {
+  const headers = new Headers()
+  const token = getAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const response = await fetch(
+    `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`,
+    { headers },
+  )
+  if (!response.ok) {
+    const error = new Error(`Request failed with status ${response.status}`)
+    error.status = response.status
+    throw error
+  }
+  return response.blob()
 }
 
 export function resolveApiUrl(url) {
