@@ -24,14 +24,21 @@ export default function ArticleEditor() {
     if (article.status === 'success') setForm(article.data)
   }, [article.status, article.data])
 
+  if (article.status === 'error' || categories.status === 'error') return <ErrorState message="The editor is unavailable." onRetry={() => { article.retry(); categories.retry() }} />
   if (article.status === 'loading' || categories.status === 'loading' || !form) return <LoadingState message="Loading editor…" />
-  if (article.status === 'error' || categories.status === 'error') return <ErrorState message="The editor is unavailable." onRetry={id ? article.retry : categories.retry} />
 
   const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
   const save = async (status) => {
     setSaving(true)
     setError(null)
-    const payload = { ...form, category_id: Number(form.category_id), status }
+    const payload = { title: form.title, slug: form.slug, category_id: Number(form.category_id), status }
+    if (form.body_blocks?.length) {
+      payload.body_blocks = form.body_blocks.map((block) => block.type === 'text'
+        ? { type: 'text', text: block.text }
+        : { type: 'image', media_id: block.media_id })
+    } else {
+      payload.body = form.body
+    }
     try {
       const saved = id ? await articleService.update(id, payload) : await articleService.create(payload)
       navigate(`/dashboard/articles/${saved.id}/edit`, { replace: true })
@@ -48,12 +55,14 @@ export default function ArticleEditor() {
       <p className={typography.eyebrow}>Content</p>
       <h1 className={typography.pageTitle}>{id ? 'Edit article' : 'New article'}</h1>
       {error && <p role="alert">{error}</p>}
-      <form onSubmit={(event) => { event.preventDefault(); save(form.status === 'pending_review' ? 'pending_review' : 'draft') }}>
+      <form onSubmit={(event) => { event.preventDefault(); save(form.status || 'draft') }}>
         <FormField id="article-title" name="title" label="Title" value={form.title} onChange={update} required />
         <FormField id="article-slug" name="slug" label="Slug" value={form.slug} onChange={update} required />
         <label htmlFor="article-category">Category<select id="article-category" name="category_id" value={form.category_id} onChange={update} required><option value="">Choose a category</option>{categories.data.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
-        <label htmlFor="article-body">Body<textarea id="article-body" name="body" value={form.body} onChange={update} required /></label>
-        <Button type="submit" disabled={saving}>Save draft</Button>
+        {form.body_blocks?.length ? form.body_blocks.map((block, index) => block.type === 'text' ? (
+          <label key={index} htmlFor={`article-text-${index}`}>Text section {index + 1}<textarea id={`article-text-${index}`} value={block.text} required onChange={(event) => setForm((current) => ({ ...current, body_blocks: current.body_blocks.map((entry, position) => position === index ? { ...entry, text: event.target.value } : entry) }))} /></label>
+        ) : <p key={index}>Attached picture {block.media_id}</p>) : <label htmlFor="article-body">Body<textarea id="article-body" name="body" value={form.body} onChange={update} required /></label>}
+        <Button type="submit" disabled={saving}>{id ? 'Save changes' : 'Save draft'}</Button>
         <Button type="button" variant="secondary" disabled={saving} onClick={() => save('pending_review')}>Submit for review</Button>
       </form>
       <p><Link to="/dashboard/articles">Back to articles</Link></p>

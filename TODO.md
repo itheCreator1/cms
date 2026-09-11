@@ -38,6 +38,8 @@ Milestone 6 has begun with ordered text-and-picture content blocks and a compati
 
 ## Frontend
 
+- [x] Correct article save payloads, retain existing picture blocks and status, and show editor load errors with retry.
+
 - [x] Build the reusable frontend foundation: `PublicLayout`, `AuthLayout`, and `DashboardLayout`; shared `Header`, `Navigation`, and `Footer`; reusable `Button` and `FormField` controls; homepage presentation components and `useHomeContent`.
 - [x] Complete the stylesheet migration: retain theme tokens and the global reset in `frontend/src/styles.css`, then move the remaining legacy layout, page, and content-card rules into co-located CSS Modules.
 - [x] Replace the inert auth context with JWT and current-user state, including local-storage restoration and logout.

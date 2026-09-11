@@ -48,6 +48,10 @@ def parse_body_input(payload, partial=False, may_attach_media=None):
 
 
 def replace_blocks(item, blocks, block_model):
+    if item.id is not None:
+        item.body_blocks.clear()
+        # Release unique positions before inserting replacements, without committing.
+        db.session.flush()
     item.body_blocks[:] = [
         block_model(position=position, text=value if kind == "text" else None, media=value if kind == "image" else None)
         for position, (kind, value) in enumerate(blocks)

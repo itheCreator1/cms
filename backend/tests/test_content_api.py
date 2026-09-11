@@ -219,6 +219,21 @@ def test_content_rejects_body_and_body_blocks_together(app, client):
     assert response.json == {"error": "Invalid content data"}
 
 
+def test_repeated_block_replacement_preserves_order(app, client):
+    owner = create_user(app, "replacement@example.test", "publisher")
+    category, _, image = seed_relations(app, owner)
+    headers = bearer(app, owner, "publisher")
+    item = client.post("/api/articles", headers=headers, json=article_payload(category)).json["item"]
+    for blocks in (
+        [{"type": "text", "text": "First"}, {"type": "image", "media_id": image}],
+        [{"type": "image", "media_id": image}, {"type": "text", "text": "Second"}],
+        [{"type": "text", "text": "Final"}],
+    ):
+        response = client.put(f"/api/articles/{item['id']}", headers=headers, json={"body_blocks": blocks})
+        assert response.status_code == 200
+        assert [{k: v for k, v in block.items() if k != "media"} for block in response.json["item"]["body_blocks"]] == blocks
+
+
 def test_body_only_article_write_remains_a_single_text_block(app, client):
     publisher_id = create_user(app, "legacy-body@example.test", "publisher")
     category_id, _, _ = seed_relations(app, publisher_id)
