@@ -125,6 +125,22 @@ test('fetchAuthenticatedBlob uses the bearer header without exposing it in a URL
   expect(fetchMock.mock.calls[0][1].headers.get('Authorization')).toBe('Bearer private-token')
 })
 
+test('fetchAuthenticatedBlob preserves a media URL that already includes the API prefix', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    blob: async () => new Blob(['image']),
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  await fetchAuthenticatedBlob('/api/media/files/private.webp')
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    'http://localhost:5000/api/media/files/private.webp',
+    expect.any(Object),
+  )
+})
+
 test.each([
   ['/api/media/files/image.webp', 'http://localhost:5000/api/media/files/image.webp'],
   ['https://cdn.example/image.webp', 'https://cdn.example/image.webp'],

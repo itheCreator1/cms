@@ -1,8 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import App from '../../App'
+import { defaultSettings, settingsService } from '../../services/settings'
+
+beforeEach(() => vi.spyOn(settingsService, 'get').mockResolvedValue(defaultSettings))
 
 afterEach(() => {
   vi.restoreAllMocks()

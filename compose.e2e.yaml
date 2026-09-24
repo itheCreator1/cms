@@ -1,0 +1,50 @@
+services:
+  db:
+    ports: !reset []
+
+  backend:
+    ports: !reset []
+    environment:
+      FRONTEND_ORIGIN: http://frontend:5173
+      SEED_SUPERADMIN_EMAIL: superadmin.e2e@example.test
+      SEED_SUPERADMIN_PASSWORD: superadmin e2e test password
+
+  frontend:
+    ports: !reset []
+    environment:
+      VITE_API_BASE_URL: http://backend:5000/api
+      __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: frontend
+
+  e2e-setup:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      FLASK_APP: backend.app:create_app
+      SECRET_KEY: development-only-change-me
+      JWT_SECRET_KEY: development-only-change-me
+      FRONTEND_ORIGIN: http://frontend:5173
+      DATABASE_URL: postgresql+psycopg://cms:cms@db:5432/cms
+      SEED_SUPERADMIN_EMAIL: superadmin.e2e@example.test
+      SEED_SUPERADMIN_PASSWORD: superadmin e2e test password
+      MEDIA_STORAGE_ROOT: /var/lib/cms/media
+    volumes:
+      - .:/app
+      - media_uploads:/var/lib/cms/media
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: >-
+      sh -c "flask db upgrade && flask seed && python -m e2e.setup"
+
+  e2e:
+    build:
+      context: .
+      dockerfile: e2e/Dockerfile
+    environment:
+      CI: "1"
+    depends_on:
+      frontend:
+        condition: service_healthy
+      e2e-setup:
+        condition: service_completed_successfully
