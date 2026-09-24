@@ -79,7 +79,7 @@ docker compose up -d
 
 The frontend development command is `vite --host 0.0.0.0` (`npm run dev`). After changing that script, restart it with `docker compose restart frontend`. Production bundles use the separate build command below.
 
-For a blank screen, capture the failed module request in the affected browser’s Network panel: URL, status, response, redirects, and blocking reason, together with the console startup error. A successful server response or a clean browser check alone does not establish that the affected profile works. See [the stabilization acceptance record](docs/reports/frontend-stabilization.md).
+For a blank screen, capture the failed module request in the affected browser’s Network panel: URL, status, response, redirects, and blocking reason, together with the console startup error. A successful server response or a clean browser check alone does not establish that the affected profile works. See [the stabilization acceptance record](docs/reports/milestone-6/05-frontend-stabilization-acceptance.md).
 
 ## Tests and frontend build
 
@@ -202,6 +202,7 @@ Review the generated revision before applying it. `flask db init` is a one-time 
 
 ## Project layout
 
+- `docs/`: [documentation index](docs/README.md) and milestone reports
 - `backend/`: Flask application factory, feature Blueprints, domain models, authentication/authorization helpers, media storage adapter, seed command, and pytest suite
 - `frontend/`: Vite/React application, public reading experience, article-authoring dashboard routes, router, persistent auth context, shared API client, login screens, and Vitest suite
 - `migrations/`: tracked Flask-Migrate/Alembic environment

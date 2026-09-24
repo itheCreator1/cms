@@ -15,7 +15,7 @@ Milestone 6 is complete for ordered text-and-picture blocks, publisher media per
 - [x] Restore the normal Vite development command and restart the frontend.
 - [x] Run Compose frontend tests (72), backend tests (138), and frontend build; verify fresh Firefox startup and public empty/not-found states.
 - [x] The originally affected browser now renders correctly; no application behavior fix was needed because the reported failure could not be reproduced after restoring the normal Vite command.
-- [x] Run and record the Compose browser suite covering startup, both login flows, publishing, public image visibility, unpublishing, published detail routes, administration, role boundaries, and public settings. Chromium and Firefox: 10 passed. See [acceptance evidence](docs/reports/frontend-stabilization.md).
+- [x] Run and record the Compose browser suite covering startup, both login flows, publishing, public image visibility, unpublishing, published detail routes, administration, role boundaries, and public settings. Chromium and Firefox: 10 passed. See [acceptance evidence](docs/reports/milestone-6/05-frontend-stabilization-acceptance.md).
 
 ## Backend
 

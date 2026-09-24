@@ -38,5 +38,3 @@ a targeted regression test.
 The disposable Compose suite provisions test-only Publisher, Admin, and Superadmin accounts. It checks public startup and both login flows; an article with a real uploaded picture through submission, approval, publication, and unpublication; and a published page on direct navigation. It also checks category, tag, media link, image upload, and Publisher-account management, plus role boundaries and public display of saved site settings. All five journeys passed in Chromium and Firefox.
 
 An early run exposed a corrupt PNG fixture: Pillow raised `SyntaxError`, and upload returned 500. The storage adapter now maps that decoder error to the existing invalid-media response, with a backend regression test. Selector ambiguity in the expanded browser checks was fixed in the tests. The final suite passed with no failures.
-
-The pre-existing deletion of `docs/reports/architecture-audit.md` and untracked `docs/reports/milestone-6/` files were preserved and excluded from this documentation commit.
