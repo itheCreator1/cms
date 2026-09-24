@@ -76,6 +76,7 @@ class LocalMediaStorage:
             Image.DecompressionBombError,
             Image.DecompressionBombWarning,
             OSError,
+            SyntaxError,
             ValueError,
         ) as error:
             if isinstance(error, InvalidMedia):

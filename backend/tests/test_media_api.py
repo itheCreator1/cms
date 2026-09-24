@@ -220,6 +220,7 @@ def test_upload_rejects_untrusted_or_oversized_images(app, client):
 
     for content, filename in (
         (b"not an image", "fake.png"),
+        (base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLJ2QAAAABJRU5ErkJggg=="), "bad-checksum.png"),
         (b"<svg xmlns='http://www.w3.org/2000/svg'></svg>", "active.svg"),
         (animated_gif(), "animated.gif"),
     ):
