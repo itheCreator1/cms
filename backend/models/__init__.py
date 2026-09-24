@@ -4,6 +4,7 @@ from backend.models.body_blocks import ArticleBodyBlock, AnnouncementBodyBlock, 
 from backend.models.categories import Category
 from backend.models.media import Media
 from backend.models.pages import Page, PageStatus
+from backend.models.settings import SiteSettings, SiteSettingsChange
 from backend.models.tags import Tag
 from backend.models.users import User, UserRole
 
@@ -20,6 +21,8 @@ __all__ = [
     "Page",
     "PageBodyBlock",
     "PageStatus",
+    "SiteSettings",
+    "SiteSettingsChange",
     "Tag",
     "User",
     "UserRole",
