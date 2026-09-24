@@ -12,6 +12,12 @@ import AnnouncementEditor from './pages/dashboard/AnnouncementEditor'
 import AnnouncementList from './pages/dashboard/AnnouncementList'
 import PageEditor from './pages/dashboard/PageEditor'
 import PageList from './pages/dashboard/PageList'
+import TaxonomyManager from './pages/dashboard/TaxonomyManager'
+import MediaLibrary from './pages/dashboard/MediaLibrary'
+import ManageUsers from './pages/dashboard/ManageUsers'
+import ManageSettings from './pages/dashboard/ManageSettings'
+import { categoryService } from './services/categories'
+import { tagService } from './services/tags'
 import AnnouncementsPage from './pages/public/AnnouncementsPage'
 import ArticlePage from './pages/public/ArticlePage'
 import Home from './pages/public/Home'
@@ -44,6 +50,13 @@ export default function App() {
             <Route path="dashboard/pages" element={<PageList />} />
             <Route path="dashboard/pages/new" element={<PageEditor />} />
             <Route path="dashboard/pages/:id/edit" element={<PageEditor />} />
+            <Route path="dashboard/categories" element={<TaxonomyManager kind="category" service={categoryService} />} />
+            <Route path="dashboard/tags" element={<TaxonomyManager kind="tag" service={tagService} />} />
+            <Route path="dashboard/media" element={<MediaLibrary />} />
+            <Route path="dashboard/users" element={<ManageUsers />} />
+          </Route>
+          <Route element={<ProtectedRoute minimumRole="superadmin" />}>
+            <Route path="dashboard/settings" element={<ManageSettings />} />
           </Route>
           <Route path="dashboard/*" element={<Navigate to="/dashboard" replace />} />
         </Route>

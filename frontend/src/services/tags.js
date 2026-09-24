@@ -5,4 +5,9 @@ export async function listTags() {
   return items
 }
 
-export const tagService = Object.freeze({ list: listTags })
+export const tagService = {
+  list: listTags,
+  create: async (values) => (await apiRequest('/tags', { method: 'POST', body: JSON.stringify(values) })).item,
+  update: async (id, values) => (await apiRequest(`/tags/${id}`, { method: 'PUT', body: JSON.stringify(values) })).item,
+  delete: async (id) => { await apiRequest(`/tags/${id}`, { method: 'DELETE' }) },
+}

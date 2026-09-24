@@ -34,10 +34,7 @@ export async function fetchAuthenticatedBlob(path) {
   const headers = new Headers()
   const token = getAccessToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
-  const response = await fetch(
-    `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`,
-    { headers },
-  )
+  const response = await fetch(resolveApiUrl(path), { headers })
   if (!response.ok) {
     const error = new Error(`Request failed with status ${response.status}`)
     error.status = response.status
@@ -49,8 +46,7 @@ export async function fetchAuthenticatedBlob(path) {
 export function resolveApiUrl(url) {
   if (!url || /^https?:\/\//i.test(url)) return url
 
-  const origin = /^https?:\/\//i.test(API_BASE_URL)
-    ? new URL(API_BASE_URL).origin
-    : window.location.origin
-  return new URL(url, `${origin}/`).toString()
+  const base = new URL(API_BASE_URL, window.location.origin)
+  if (url.startsWith('/api/')) return new URL(url, base.origin).toString()
+  return new URL(url.replace(/^\//, ''), `${base.href.replace(/\/$/, '')}/`).toString()
 }
