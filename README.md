@@ -1,8 +1,29 @@
 # CMS
 
-This repository contains a Dockerized role-based CMS built with Flask, React, and PostgreSQL. Docker Compose is the canonical runtime: it starts PostgreSQL 18, the Flask API, and the Vite/React frontend together with health checks and source reload.
+**A self-hosted, role-based content platform for teams who publish — without handing editors the keys to the server.**
 
-Milestones 1–5 are complete: the repository includes the runnable application skeleton, migrated domain schema, JWT authentication, numeric role enforcement, frontend session restoration, content CRUD, taxonomy management, guarded user administration, a secure media library, and the public reading experience. The reusable frontend foundation supplies the shared route shells, navigation, controls, homepage composition, and co-located stylesheet modules. Milestone 6 then delivers the complete dashboard and publisher pictures. Site-wide settings remain later work.
+Think of it as the editorial backbone behind a news site, company blog, or membership portal: writers draft, editors approve, admins govern, and the public gets a clean reading experience — all backed by a Flask API, a React front end, and PostgreSQL, running anywhere Docker runs.
+
+## Why teams use it
+
+- **Clear roles, no gray areas.** Publishers write and submit; Admins review, publish, or send work back; Superadmins govern the whole system through a separate, unlisted access point. Everyone sees exactly what their role allows — nothing more.
+- **An editorial workflow, not just a database table.** Drafts move through submission and review before they ever go live, so nothing gets published by accident.
+- **Built-in media handling.** Writers upload images directly; the system re-encodes them, strips hidden metadata, and only exposes a file publicly once it's actually referenced by published content.
+- **A fast, distraction-free public site.** Articles, announcements, and pages render instantly for visitors, with independent sections that keep degrading gracefully — one broken feed never takes down the rest of the homepage.
+- **Runs anywhere Docker does.** One command boots the database, API, and front end together, with health checks and hot reload for active development.
+
+## What's inside
+
+| Layer | Tech | Role |
+|---|---|---|
+| Frontend | React + Vite | Public site and role-aware dashboards |
+| Backend | Flask | REST API, auth, and business rules |
+| Database | PostgreSQL 18 | Content, taxonomy, users, and media metadata |
+| Runtime | Docker Compose | One-command local and staging environments |
+
+The mandatory CMS milestones cover the runnable application, migrated domain schema, authentication, content APIs, public reading experience, publisher editing, and Admin administration screens. Site settings are persistent and editable by Superadmins. Chromium and Firefox browser acceptance passed; results are recorded in `TODO.md` and the stabilization report.
+
+---
 
 ## Requirements
 
@@ -75,6 +96,16 @@ Create a production frontend bundle:
 docker compose exec frontend npm run build
 ```
 
+Run the browser acceptance suite in its disposable Compose setup. It creates
+test-only Publisher, Admin, and Superadmin accounts, then verifies public
+startup, both sign-in flows, publishing, image visibility, unpublishing, and a
+published page route, administration screens, role boundaries, and site settings
+in Chromium and Firefox:
+
+```sh
+docker compose -p cms-e2e -f compose.yaml -f compose.e2e.yaml run --build --rm e2e
+```
+
 ## Authentication and seed data
 
 The backend exposes these authentication endpoints:
@@ -98,6 +129,8 @@ Tokens record whether they came from regular or Superadmin login. If an Admin is
 ## Content API
 
 Authenticated dashboard routes cover article and announcement lists/editors for Publishers, plus page management for Admins and Superadmins: `/dashboard/articles`, `/dashboard/announcements`, and `/dashboard/pages`. Editors support ordered text and picture blocks, status workflows, private picture previews, and expiry dates for announcements.
+
+Admins and Superadmins can open `/dashboard/categories`, `/dashboard/tags`, `/dashboard/media`, and `/dashboard/users`. These screens support create, edit, delete, loading, retry, and API errors. The media screen accepts local image uploads and HTTPS links. Admin user management is limited to Publisher accounts. Superadmins can manage all permitted roles and open `/dashboard/settings`.
 
 The content API uses JSON request and response bodies. Collection responses use `{"items": [...]}` and individual resources use `{"item": {...}}`.
 
@@ -145,9 +178,11 @@ Uploads accept JPEG, PNG, WebP, and non-animated GIF images. They are limited by
 
 User management uses `GET/POST /api/users` and `GET/PUT/DELETE /api/users/<id>`. Admins can manage Publisher accounts only. Superadmins can manage every role, but cannot delete or demote their active account. Referenced taxonomy, media, and users return `409` until content is explicitly reassigned or detached.
 
+`GET /api/settings` returns public site name, tagline, homepage headline, and homepage intro text. `PUT /api/settings` requires a Superadmin token. It accepts those four text fields, trims whitespace, rejects empty or overlong values, and writes an append-only before/after change record with actor and time. The public response contains no change log data. Saved copy appears in the header, footer, and homepage. Apply `flask db upgrade` before using this endpoint on an existing database.
+
 ## Database migrations
 
-The tracked Alembic history contains the initial CMS domain schema, the announcement-review status revision, the source-aware media asset revision, and the ordered content-block backfill revision.
+The tracked Alembic history contains the initial CMS domain schema, the announcement-review status revision, the source-aware media asset revision, the ordered content-block backfill revision, and persistent site settings with change history.
 
 Apply revisions and inspect migration state:
 
@@ -182,7 +217,7 @@ The reusable frontend foundation separates route-area shells from shared site ch
 - `frontend/src/components/home/HomeIntro.jsx`, `AnnouncementSection.jsx`, and `ArticleSection.jsx` present the homepage. `frontend/src/hooks/useHomeContent.js` loads the homepage data, and `frontend/src/pages/public/Home.jsx` is the edit point for the section order.
 - `frontend/src/styles.css` is the single source of global reset and theme tokens. Layout, page, and component rules belong in co-located CSS Modules and consume those tokens.
 
-Milestone 6 depends on this foundation. It keeps the planned role-aware dashboard, editorial workflow, and Publisher-owned picture upload and rendering requirements. Superadmin site-wide settings are a later milestone.
+Markdown rendering, rich provider embeds, and non-image uploads remain future extensions.
 
 ## Optional host-native troubleshooting
 

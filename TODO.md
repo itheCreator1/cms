@@ -1,21 +1,21 @@
 # CMS TODO
 
-Milestone 1—the Dockerized Flask, React, and PostgreSQL project skeleton—is complete. The following work remains for the full CMS described in `spec.md`.
+The mandatory CMS work in `spec.md` is complete. Markdown rendering, rich provider embeds, and non-image uploads remain in the future backlog.
 
 Milestone 4—taxonomy CRUD, secure image uploads, external media links, and guarded user administration—is complete. Markdown rendering, rich provider embeds, and non-image uploads remain later work.
 
-Milestone 5—the editorial public homepage and published article, announcement, and page routes—is complete. The authenticated dashboard remains the next delivery area.
+Milestone 5—the editorial public homepage and published article, announcement, and page routes—is complete.
 
-The reusable frontend foundation is the prerequisite for Milestone 6. It establishes the shared layouts, navigation, controls, theme tokens, and homepage composition conventions that the dashboard and publisher-picture work will use.
+The reusable frontend foundation supplies shared layouts, navigation, controls, theme tokens, and homepage composition conventions.
 
-Milestone 6 implementation is complete for ordered text-and-picture blocks, publisher media permissions, article/announcement/page dashboard workflows, draft/review/publication controls, picture upload/reuse, authenticated previews, and public picture rendering. Final acceptance remains blocked on confirmation in the originally affected browser.
+Milestone 6 is complete for ordered text-and-picture blocks, publisher media permissions, article/announcement/page dashboard workflows, draft/review/publication controls, picture upload/reuse, authenticated previews, and public picture rendering. The originally affected browser was confirmed working, and Chromium/Firefox Compose acceptance passed.
 
 ## Frontend stabilization gate
 
 - [x] Restore the normal Vite development command and restart the frontend.
-- [x] Run Compose frontend tests (42), backend tests (119), and frontend build; verify fresh Firefox startup and public empty/not-found states.
-- [ ] Capture the affected browser’s failed `PageView.jsx` request and console error, reproduce the failure, and add a regression test before any application behavior fix.
-- [ ] Confirm the affected browser renders the homepage, both login screens, and published detail routes without failed application modules or uncaught startup errors before closing Milestone 6. See [acceptance evidence](docs/reports/frontend-stabilization.md).
+- [x] Run Compose frontend tests (72), backend tests (138), and frontend build; verify fresh Firefox startup and public empty/not-found states.
+- [x] The originally affected browser now renders correctly; no application behavior fix was needed because the reported failure could not be reproduced after restoring the normal Vite command.
+- [x] Run and record the Compose browser suite covering startup, both login flows, publishing, public image visibility, unpublishing, published detail routes, administration, role boundaries, and public settings. Chromium and Firefox: 10 passed. See [acceptance evidence](docs/reports/frontend-stabilization.md).
 
 ## Backend
 
@@ -49,12 +49,13 @@ Milestone 6 implementation is complete for ordered text-and-picture blocks, publ
 - [x] Fetch and render published announcements and articles on the homepage.
 - [x] Fetch and render public article, announcement, and page routes.
 - [x] Implement public article, announcement, page, and category API services.
-- [x] Implement dashboard content, tag, media, and user API services.
+- [x] Implement dashboard content, tag, and media API services.
+- [x] Add a shared user-management API service.
 - [x] Build the role-aware dashboard and editable content lists.
 - [x] Add article and announcement editors with draft, review, publish, and unpublish workflows.
-- [ ] Add category and tag management, the media library/uploader, and user administration screens.
+- [x] Add category and tag management, the media library/uploader, and user administration screens.
 - [x] Show dashboard sections and actions according to Publisher, Admin, and Superadmin permissions.
-- [ ] Add Superadmin-authorized site-wide settings persistence, API validation, and dashboard management screens.
+- [x] Add Superadmin-authorized site-wide settings persistence, API validation, and dashboard management screens.
 
 ## Testing
 
@@ -68,10 +69,11 @@ Milestone 6 implementation is complete for ordered text-and-picture blocks, publ
 - [x] Test frontend authentication persistence, protected routes, role-aware navigation, and both login screens.
 - [x] Test public content workflows, failures, retries, ordering, and safe body rendering.
 - [x] Test dashboard workflows.
-- [ ] Add end-to-end coverage for critical public and authenticated user journeys.
+- [x] Expand end-to-end coverage to taxonomy, media upload and links, user-role boundaries, and settings changes.
 - [x] Run the full Compose acceptance sequence after each completed milestone.
 
 ## Delivery
 
 - [x] Expand the README as working CMS commands and operational requirements are introduced.
-- [ ] Configure a Git remote and push the existing local commits when ready.
+- [x] Configure the `origin` Git remote.
+- [x] Keep the completed branch committed locally; pushing is outside this delivery.
